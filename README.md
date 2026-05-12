@@ -26,5 +26,5 @@ Sigue estos pasos para levantar el proyecto en tu máquina local:
 
 ### 1. Clonar el repositorio
 ```bash
-git clone [https://github.com/tu-usuario/tu-proyecto.git](https://github.com/tu-usuario/tu-proyecto.git)
+git clone https://github.com/GustavoAIG/plataforma-horarios-ia.git
 cd tu-proyecto
