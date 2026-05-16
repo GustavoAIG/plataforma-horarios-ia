@@ -39,16 +39,16 @@ export default function AuthPage({ onLogin, onBack }) {
 
             <div className="auth-proof-grid">
               <div className="auth-proof">
-                <strong>Inicio seguro</strong>
-                <span>Flujo de acceso simulado con respaldo para integrarse luego a autenticación real.</span>
+                <strong>Estudio monitoreado</strong>
+                <span>La IA te ayuda a mantener el enfoque y optimizar tu tiempo de estudio.</span>
               </div>
               <div className="auth-proof">
                 <strong>Cuenta y progreso</strong>
-                <span>Tu nombre y email quedan listos para reaprovecharse en dashboard y perfil.</span>
+                <span>Guarda tu progreso y sincroniza tu plan de estudios de forma inteligente.</span>
               </div>
               <div className="auth-proof">
-                <strong>Sin cortar el diseño</strong>
-                <span>La interfaz sigue la línea visual del sistema: limpia, sobria y profesional.</span>
+                <strong>Diseño amigable</strong>
+                <span>La interfaz está diseñada para mantener la motivación del estudiante.</span>
               </div>
             </div>
           </aside>
