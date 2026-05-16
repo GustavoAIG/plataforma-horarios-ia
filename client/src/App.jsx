@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import heroPhoto from './assets/hero.png'
+import heroPhoto from './assets/study.webp'
 import './App.css'
 import AuthPage from './components/AuthPage'
 

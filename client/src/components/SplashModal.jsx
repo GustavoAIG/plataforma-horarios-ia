@@ -1,5 +1,5 @@
 import React from 'react'
-import logoSrc from '../assets/hero.png'
+import logoSrc from '../assets/study.webp'
 
 export default function SplashModal({ onClose, onStart }) {
   return (
