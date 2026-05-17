@@ -9,6 +9,14 @@
   grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
 }
 
+.auth-error {
+  background: rgba(255, 0, 0, 0.1);
+  color: #ff4d4f;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+}
+
 .shell-inner {
   min-height: 100vh;
   display: grid;

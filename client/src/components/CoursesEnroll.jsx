@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { courses as mockCourses } from '../data/mock'
 
 export default function CoursesEnroll({ onGenerate, onAddManual, onImport }) {

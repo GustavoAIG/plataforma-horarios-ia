@@ -1,24 +1,82 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 export default function AuthPage({ onLogin, onBack }) {
   const [mode, setMode] = useState('login')
   const [email, setEmail] = useState('')
   const [name, setName] = useState('')
+  const [lastName1, setLastName1] = useState('')
+  const [lastName2, setLastName2] = useState('')
+  const [university, setUniversity] = useState('')
+  const [career, setCareer] = useState('')
   const [password, setPassword] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    if (!email) return alert('Ingresa un email')
-    const profile = { name: name || email.split('@')[0], email }
-    onLogin && onLogin(profile)
-  }
+    setError('')
 
-  function socialLogin(provider) {
-    const profile = {
-      name: provider === 'google' ? 'Usuario Google' : 'Usuario Microsoft',
-      email: provider === 'google' ? 'google@stressless.app' : 'microsoft@stressless.app',
+    if (!email || !password) {
+      return setError('Email y contraseña son requeridos')
     }
-    onLogin && onLogin(profile)
+
+    if (!email.includes('.edu')) {
+      return setError('Usa un correo universitario válido')
+    }
+
+    if (password.length < 8) {
+      return setError('La contraseña debe tener mínimo 8 caracteres')
+    }
+
+    if (mode === 'signup' && !name) {
+      return setError('El nombre es requerido')
+    }
+
+    if (mode === 'signup' && !lastName1) {
+      return setError('El apellido paterno es requerido')
+    }
+
+    if (mode === 'signup' && !lastName2) {
+      return setError('El apellido materno es requerido')
+    }
+
+    if (mode === 'signup' && !university) {
+      return setError('La universidad es requerida')
+    }
+
+    if (mode === 'signup' && !career) {
+      return setError('La carrera es requerida')
+    }
+    setLoading(true)
+    try {
+      setError('')
+
+      console.log({
+        email,
+        password,
+        isRegister: mode === 'signup',
+        name,
+        lastName1,
+        lastName2,
+        university,
+        career,
+      })
+
+      await onLogin({
+        email,
+        password,
+        isRegister: mode === 'signup',
+        name,
+        lastName1,
+        lastName2,
+        university,
+        career,
+      })
+    } catch (err) {
+      setError(err.message || 'Ocurrió un error')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -59,47 +117,139 @@ export default function AuthPage({ onLogin, onBack }) {
                 <h3>Inicia sesión o crea tu cuenta</h3>
                 <p>Usa cualquiera de estos accesos para entrar a Stressless y continuar el onboarding.</p>
               </div>
-              {onBack ? <button className="soft-button" type="button" onClick={onBack}>Volver</button> : null}
+              {onBack ? <button className="soft-button" type="button" onClick={() => onBack?.()}>Volver</button> : null}
             </div>
 
             <div className="auth-mode-switch">
-              <button type="button" className={`secondary-button ${mode === 'login' ? 'is-active' : ''}`} onClick={() => setMode('login')}>Iniciar sesión</button>
-              <button type="button" className={`secondary-button ${mode === 'signup' ? 'is-active' : ''}`} onClick={() => setMode('signup')}>Crear cuenta</button>
-            </div>
-
-            <div className="auth-social-row">
-              <button type="button" className="soft-button" onClick={() => socialLogin('google')}>Continuar con Google</button>
-              <button type="button" className="soft-button" onClick={() => socialLogin('microsoft')}>Continuar con Microsoft</button>
+              <button type="button" className={`secondary-button ${mode === 'login' ? 'is-active' : ''}`} onClick={() => setMode('login')}>
+                Iniciar sesión
+              </button>
+              <button type="button" className={`secondary-button ${mode === 'signup' ? 'is-active' : ''}`} onClick={() => setMode('signup')}>
+                Crear cuenta
+              </button>
             </div>
 
             <form onSubmit={submit} className="auth-input-grid">
-              {mode === 'signup' ? (
-                <div className="auth-field">
-                  <label>Nombre completo</label>
-                  <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Tu nombre" />
+              {error && (
+                <div className="auth-error">
+                  {error}
                 </div>
-              ) : null}
+              )}
+              {mode === 'signup' && (
+                <>
+                  <div className="auth-field">
+                    <label>Nombre</label>
+                    <input
+                      name="name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Tu nombre"
+                      required
+                    />
+                  </div>
+                  <div className="auth-field">
+                    <label>Apellido Paterno</label>
+                    <input
+                      name="lastName1"
+                      value={lastName1}
+                      onChange={(e) => setLastName1(e.target.value)}
+                      placeholder="Tu apellido paterno"
+                      required
+                    />
+                  </div>
+                  <div className="auth-field">
+                    <label>Apellido Materno</label>
+                    <input
+                      name="lastName2"
+                      value={lastName2}
+                      onChange={(e) => setLastName2(e.target.value)}
+                      placeholder="Tu apellido materno"
+                      required
+                    />
+                  </div>
+                  <div className="auth-field">
+                    <label>Universidad</label>
+                    <input
+                      name="university"
+                      value={university}
+                      onChange={(e) => setUniversity(e.target.value)}
+                      placeholder="Ej: Universidad Nacional Mayor de San Marcos"
+                      required
+                    />
+                  </div>
+
+                  <div className="auth-field">
+                    <label>Carrera</label>
+                    <input
+                      name="career"
+                      value={career}
+                      onChange={(e) => setCareer(e.target.value)}
+                      placeholder="Ej: Ingeniería de Software"
+                      required
+                    />
+                  </div>
+                </>
+              )}
 
               <div className="auth-field">
                 <label>Email universitario</label>
-                <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="correo@uni.edu" />
+                <input
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="correo@uni.edu"
+                  required
+                />
               </div>
 
               <div className="auth-field">
                 <label>Contraseña</label>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" />
+                <input
+                  name="password"
+                  type="password"
+                  autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
               </div>
 
-              <div className="auth-meta-row">
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}><input type="checkbox" /> Recuérdame</label>
-                <button type="button" className="soft-button" onClick={() => alert('Recuperación de contraseña simulada')}>¿Olvidaste tu contraseña?</button>
-              </div>
+              {mode === 'login' && (
+                <div className="auth-meta-row">
+                  <label style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <input type="checkbox" /> Recuérdame
+                  </label>
+                  <button
+                    type="button"
+                    className="soft-button"
+                    onClick={() => alert('Recuperación de contraseña (próximamente)')}
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </button>
+                </div>
+              )}
 
-              <p className="auth-hint">Al continuar, tu perfil se usará en el calendario, el dashboard y el panel de usuario.</p>
+              <p className="auth-hint">
+                Al continuar, tu perfil se usará en el calendario, el dashboard y el panel de usuario.
+              </p>
 
               <div className="auth-submit-row">
-                <button className="secondary-button" type="button" onClick={onBack}>Cancelar</button>
-                <button className="primary-button primary-button--compact" type="submit">{mode === 'login' ? 'Entrar' : 'Crear cuenta'}</button>
+                <button className="secondary-button" type="button" onClick={() => onBack?.()}>
+                  Cancelar
+                </button>
+                <button
+                  className="primary-button primary-button--compact"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading
+                    ? 'Cargando...'
+                    : mode === 'login' ? 'Entrar' : 'Crear cuenta'
+                  }
+                </button>
               </div>
             </form>
           </main>
