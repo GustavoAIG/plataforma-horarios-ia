@@ -1,0 +1,96 @@
+/* Contenedor principal (Fondo de toda la pantalla) */
+.page--landing {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f0f7f7; /* Fondo verdoso/celeste muy claro */
+  margin: 0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Contenedor exterior */
+.splash-shell--hero {
+  width: 100%;
+  max-width: 820px;
+}
+
+/* La tarjeta blanca central */
+.splash-panel--hero {
+  background-color: #ffffff;
+  border-radius: 24px; /* Bordes redondeados idénticos a la foto */
+  padding: 60px 40px;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04); /* Sombra suave de fondo */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Icono/Logo */
+.logo-badge {
+  margin-bottom: 16px;
+}
+
+/* Título "Stressless" */
+.splash-title {
+  font-size: 3.2rem;
+  font-weight: 800;
+  color: #2e3e52;   /* Azul oscuro grisáceo */
+  margin: 0 0 12px 0;
+  letter-spacing: -1px;
+}
+
+/* Subtítulo */
+.splash-subtitle {
+  font-size: 1.15rem;
+  color: #7a8b9e;   /* Gris azulado sutil */
+  margin: 0 0 32px 0;
+  font-weight: 500;
+}
+
+/* El rectángulo de "Reduce tu estrés..." */
+.splash-pill {
+  background-color: #eef2f6;
+  color: #2d4356;
+  font-weight: 600;
+  font-size: 0.95rem;
+  padding: 14px 28px;
+  border-radius: 12px;
+  border: 1px solid #e1e8f0;
+  margin-bottom: 40px;
+  display: inline-block;
+}
+
+/* Fila de botones (Centrada) */
+.button-row--center {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Botón COMENZAR (Estilo exacto de la imagen) */
+.primary-button--splash {
+  padding: 16px 48px; /* Un poco más de padding a los lados para que luzca imponente solo */
+  font-size: 0.95rem;
+  font-weight: 700;
+  border-radius: 14px;
+  cursor: pointer;
+  border: none;
+  height: 54px;
+  background-color: #314257; /* Color idéntico al fondo del SVG */
+  color: #ffffff;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, box-shadow 0.2s ease;
+  /* Sombra pronunciada debajo del botón */
+  box-shadow: 0 10px 25px rgba(49, 66, 87, 0.35); 
+}
+
+.primary-button--splash:hover {
+  background-color: #263445;
+  box-shadow: 0 12px 28px rgba(49, 66, 87, 0.45);
+}

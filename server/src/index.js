@@ -17,6 +17,7 @@ import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { connectDB } from './config/db.js'
 import authRoutes from './routes/auth.routes.js'
+import userRoutes from './routes/user.routes.js'
 import courseRoutes from './routes/course.routes.js'
 import scheduleRoutes from './routes/schedule.routes.js'
 
@@ -45,6 +46,7 @@ app.use('/api/auth/login', rateLimit({
 
 // Rutas
 app.use('/api/auth', authRoutes)
+app.use('/api/user', userRoutes) 
 app.use('/api/courses', courseRoutes)
 app.use('/api/schedule', scheduleRoutes)
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }))

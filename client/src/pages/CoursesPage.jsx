@@ -1,47 +1,80 @@
-// Si prefieres pasar los iconos como props o importarlos desde un archivo de iconos, puedes hacerlo.
-// Aquí mantengo los componentes de iconos que usaba el archivo original para que no te falte nada.
+import { useState } from 'react'
+import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
+import api from '../api/axios'
+import { defaultCourses } from '../data/mockData'
+
 function CalendarIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24">
       <rect x="4" y="5" width="16" height="15" rx="2.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
       <path d="M7 3v4M17 3v4M4 9h16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
     </svg>
-  );
+  )
 }
 
 function SparkMarkIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" width="24" height="24">
-      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
+      <path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8L12 3Z"
+        fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
     </svg>
-  );
+  )
 }
 
-export default function CoursesPage({ 
-  courses, 
-  selectedCourses, 
-  onToggleCourse, 
-  onAddCourse, 
-  onImport, 
-  onGenerate 
-}) {
+export default function CoursesPage() {
+  const navigate                      = useNavigate()
+  const { state }                     = useLocation()
+  const { user, login }               = useAuth()
+  const [courses, setCourses]         = useState(defaultCourses)
+  const [selected, setSelected]       = useState([])
+  const [showModal, setShowModal]     = useState(false)
+  const [loading, setLoading]         = useState(false)
+  const [error, setError]             = useState('')
 
-  // Manejador local para la importación universitaria
-  function handleUniversityImport() {
-    if (onImport) {
-      // Ejecuta la función que viene del padre
-      onImport();
-    } else {
-      // Callback por defecto si no se pasa la prop, ideal para testing
-      console.log('Simulando importación desde el sistema universitario...');
+  function toggleCourse(name) {
+    setSelected(prev =>
+      prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]
+    )
+  }
+
+  function submitAddCourse(e) {
+    e.preventDefault()
+    const name    = e.target.name.value.trim()
+    const code    = e.target.code.value.trim() || 'CURS101'
+    const credits = parseInt(e.target.credits.value, 10) || 3
+    if (!name) return
+    setCourses(prev => [...prev, { name, code, credits }])
+    setSelected(prev => [...prev, name])
+    setShowModal(false)
+    e.target.reset()
+  }
+
+  async function handleGenerate() {
+    if (selected.length === 0) return
+    setLoading(true)
+    setError('')
+    try {
+      await api.post('/auth/learning-answers', {
+        answers: state?.answers || [],
+        courses: selected,
+      })
+
+      // Marcar onboarding como completo
+      await api.patch('/user/complete-onboarding')
+
+      navigate('/app/calendar', { replace: true })
+    } catch (err) {
+      setError('Error al guardar tu configuración. Intenta de nuevo.')
+    } finally {
+      setLoading(false)
     }
   }
 
   return (
     <section className="page page--courses">
       <div className="screen-card courses-card">
-        
-        {/* ENCABEZADO DE LA PÁGINA */}
+
         <div className="header-row header-row--courses">
           <div className="section-icon section-icon--calendar">
             <CalendarIcon />
@@ -52,30 +85,29 @@ export default function CoursesPage({
           </div>
         </div>
 
-        {/* BANNER INFORMATIVO EXPLICANDO EL VALOR DE LA IA */}
         <div className="info-banner">
           <SparkMarkIcon />
           <div>
             <strong>¿Por qué necesitamos esta información?</strong>
             <p>
-              La IA generará un horario de estudio personalizado para cada curso, 
-              distribuyendo el tiempo de forma balanceada y evitando que estudies todo a 
+              La IA generará un horario de estudio personalizado para cada curso,
+              distribuyendo el tiempo de forma balanceada y evitando que estudies todo a
               última hora, reduciendo significativamente tu estrés académico.
             </p>
           </div>
         </div>
 
-        {/* CUADRÍCULA DE CURSOS DISPONIBLES */}
+        {error && <div className="auth-error">{error}</div>}
+
         <div className="course-grid">
-          {courses && courses.map((course) => {
-            const isSelected = selectedCourses.includes(course.name);
-            
+          {courses.map((course) => {
+            const isSelected = selected.includes(course.name)
             return (
-              <button 
-                key={course.code} 
-                className={`course-card ${isSelected ? 'is-selected' : ''}`} 
-                type="button" 
-                onClick={() => onToggleCourse(course.name)}
+              <button
+                key={course.code}
+                className={`course-card ${isSelected ? 'is-selected' : ''}`}
+                type="button"
+                onClick={() => toggleCourse(course.name)}
                 aria-pressed={isSelected}
               >
                 <span className="checkbox-circle" />
@@ -84,40 +116,50 @@ export default function CoursesPage({
                   <small>{course.code} • {course.credits} créditos</small>
                 </span>
               </button>
-            );
+            )
           })}
         </div>
 
-        {/* ACCIONES SECUNDARIAS: AGREGAR MANUAL O IMPORTAR */}
         <div className="course-actions">
-          <button 
-            className="soft-button" 
-            type="button" 
-            onClick={onAddCourse}
-          >
+          <button className="soft-button" type="button" onClick={() => setShowModal(true)}>
             + Agregar curso manualmente
-          </button>
-          
-          <button 
-            className="soft-button" 
-            type="button" 
-            onClick={handleUniversityImport}
-          >
-            + Importar desde sistema universitario
           </button>
         </div>
 
-        {/* BOTÓN PRINCIPAL PARA ENVIAR Y CONTINUAR AL LOGIN/REGISTRO */}
-        <button 
-          className="primary-button primary-button--wide" 
-          type="button" 
-          onClick={onGenerate}
-          disabled={selectedCourses.length === 0} // Evita avanzar sin seleccionar nada
+        <button
+          className="primary-button primary-button--wide"
+          type="button"
+          onClick={handleGenerate}
+          disabled={selected.length === 0 || loading}
         >
-          GENERAR MI HORARIO
+          {loading ? 'Guardando...' : 'GENERAR MI HORARIO'}
         </button>
-        
+
       </div>
+
+      {/* MODAL AGREGAR CURSO */}
+      {showModal && (
+        <div className="modal-overlay" role="dialog">
+          <div className="modal-card">
+            <h3>Agregar curso manualmente</h3>
+            <form onSubmit={submitAddCourse}>
+              <input name="name" placeholder="Nombre del curso" required />
+              <input name="code" placeholder="Código (ej: MAT101)" />
+              <input name="credits" type="number" placeholder="Créditos" defaultValue={3} />
+              <div className="auth-submit-row">
+                <button type="button" className="secondary-button"
+                  onClick={() => setShowModal(false)}>
+                  Cancelar
+                </button>
+                <button type="submit" className="primary-button primary-button--compact">
+                  Agregar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </section>
-  );
+  )
 }

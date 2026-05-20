@@ -1,0 +1,319 @@
+/* Contenedor Externo */
+.page--auth {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: #f1f5f9; /* Gris azulado claro de fondo general */
+  margin: 0;
+  padding: 40px 20px;
+  box-sizing: border-box;
+}
+
+.auth-shell {
+  width: 100%;
+  max-width: 1060px; /* Ancho idéntico al contenedor completo de la foto */
+}
+
+/* Panel Principal de dos bloques unificados */
+.auth-panel {
+  display: flex;
+  background-color: #ffffff;
+  border-radius: 28px;
+  overflow: hidden; /* Corta esquinas para que el bloque oscuro no se desborde */
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03);
+}
+
+/* ==========================================================================
+   ASIDE (BLOQUE IZQUIERDO OSCURO)
+   ========================================================================== */
+.auth-aside {
+  width: 44%;
+  background-color: #2b3a4a; /* Azul noche profundo de la imagen */
+  color: #ffffff;
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between; /* Separa texto superior de los bloques de abajo */
+}
+
+.auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.auth-brand-mark {
+  width: 32px;
+  height: 32px;
+  background-color: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.auth-aside-title {
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.25;
+  margin: 0 0 16px 0;
+  letter-spacing: -0.5px;
+}
+
+.auth-aside-subtitle {
+  font-size: 0.95rem;
+  color: #a0aec0;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Bloques de características internos del Aside */
+.auth-proof-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 40px;
+}
+
+.auth-proof {
+  background-color: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 16px 20px;
+  border-radius: 14px;
+}
+
+.auth-proof strong {
+  display: block;
+  font-size: 0.95rem;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.auth-proof span {
+  font-size: 0.85rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+  display: block;
+}
+
+/* ==========================================================================
+   MAIN CARD (FORMULARIO DERECHO BLANCO)
+   ========================================================================== */
+.auth-form-card {
+  width: 56%;
+  padding: 48px 48px;
+  background-color: #ffffff;
+}
+
+.auth-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.auth-header-text h3 {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: #1e293b;
+  margin: 0 0 6px 0;
+}
+
+.auth-header-text p {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin: 0;
+}
+
+/* Botón Volver */
+.soft-button-volver {
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #475569;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+/* Pestañas Iniciar Sesión / Crear Cuenta */
+.auth-mode-switch {
+  display: flex;
+  background-color: #f1f5f9;
+  padding: 6px;
+  border-radius: 12px;
+  gap: 4px;
+  margin-bottom: 20px;
+}
+
+.switch-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  padding: 12px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.switch-tab.is-active {
+  background-color: #2b3a4a; /* Se vuelve oscuro si se activa */
+  color: #ffffff;
+}
+
+/* Botones Google / Microsoft */
+.auth-oauth-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.oauth-button {
+  flex: 1;
+  background-color: #ffffff;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Inputs de Formulario */
+.auth-input-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auth-field label {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #334155;
+}
+
+.auth-field input {
+  padding: 14px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  font-size: 0.95rem;
+  color: #1e293b;
+  background-color: #ffffff;
+}
+
+.auth-field input::placeholder {
+  color: #94a3b8;
+}
+
+.auth-field input:focus {
+  outline: none;
+  border-color: #2b3a4a;
+}
+
+/* Checkbox y Olvidaste contraseña */
+.auth-extra-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+}
+
+.remember-me {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.forgot-password-link {
+  background: none;
+  border: none;
+  color: #1e293b;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background-color: #ffffff;
+}
+
+/* Texto de advertencia inferior */
+.auth-hint {
+  font-size: 0.82rem;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 8px 0 0 0;
+}
+
+/* Fila de Botones Finales de Envío */
+.auth-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.cancel-button {
+  background-color: #f8fafc;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.enter-button {
+  background-color: #2b3a4a;
+  color: #ffffff;
+  border: none;
+  padding: 12px 28px;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.enter-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Errores */
+.auth-error {
+  background-color: #fef2f2;
+  border: 1px solid #fee2e2;
+  color: #ef4444;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+/* Ajuste Responsivo Básico */
+@media (max-width: 868px) {
+  .auth-panel {
+    flex-direction: column;
+  }
+  .auth-aside, .auth-form-card {
+    width: 100%;
+    box-sizing: border-box;
+  }
+}
