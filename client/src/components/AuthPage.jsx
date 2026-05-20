@@ -1,7 +1,15 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './AuthPage.css'
+
+import video1 from '../assets/video/videostressless1.webm'
+import video2 from '../assets/video/videostressless2.webm'
+import video3 from '../assets/video/videostressless3.webm'
+import video4 from '../assets/video/videostressless4.webm'
+import stresslessIcon from '../assets/Stressless.png'
+
+const videos = [video1, video2, video3, video4]
 
 const universityEmailRegex =
   /^[^\s@]+@[^\s@]+\.edu(\.[a-z]+)?$/i
@@ -25,6 +33,9 @@ export default function AuthPage() {
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  // Seleccionamos un video aleatorio al montar el componente
+  const [randomVideo] = useState(() => videos[Math.floor(Math.random() * videos.length)])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -130,8 +141,8 @@ export default function AuthPage() {
           <aside className="auth-aside">
             <div>
               <div className="auth-brand">
-                <div className="auth-brand-mark">
-                  <span>⌁</span>
+                <div className="auth-brand-mark" style={{ overflow: 'hidden', backgroundColor: '#2C3E50' }}>
+                  <img src={stresslessIcon} alt="Stressless Logo" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
 
                 <strong>Stressless</strong>
@@ -148,9 +159,23 @@ export default function AuthPage() {
               </p>
             </div>
 
-            <div className="auth-proof-grid">
-              <div className="auth-proof">
-                <strong>Estudio monitoreado</strong>
+            {mode === 'signup' && (
+              <div className="auth-video-container" style={{ flex: 1, minHeight: 0, margin: '32px 0', borderRadius: '16px', overflow: 'hidden' }}>
+                <video 
+                  src={randomVideo} 
+                  autoPlay 
+                  loop 
+                  muted 
+                  playsInline 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
+              </div>
+            )}
+
+            {mode !== 'signup' && (
+              <div className="auth-proof-grid">
+                <div className="auth-proof">
+                  <strong>Estudio monitoreado</strong>
 
                 <span>
                   La IA te ayuda a mantener el enfoque
@@ -176,6 +201,7 @@ export default function AuthPage() {
                 </span>
               </div>
             </div>
+            )}
           </aside>
 
           <main className="auth-form-card">

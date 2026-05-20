@@ -4,7 +4,7 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: #f1f5f9; /* Gris azulado claro de fondo general */
+  background: linear-gradient(135deg, #6272db 0%, #d46ccf 100%);
   margin: 0;
   padding: 40px 20px;
   box-sizing: border-box;
