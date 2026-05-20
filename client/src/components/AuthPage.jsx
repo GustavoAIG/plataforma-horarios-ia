@@ -36,16 +36,7 @@ export default function AuthPage() {
   }
 
   const validateForm = () => {
-    const cleanEmail = form.email.trim().toLowerCase()
-
-    if (!universityEmailRegex.test(cleanEmail)) {
-      return 'Usa un correo universitario válido'
-    }
-
-    if (form.password.trim().length < 8) {
-      return 'La contraseña debe tener mínimo 8 caracteres'
-    }
-
+    // 1. Si es registro, validamos primero los datos que aparecen arriba en la interfaz
     if (mode === 'signup') {
       if (!form.name.trim()) {
         return 'El nombre es requerido'
@@ -62,6 +53,18 @@ export default function AuthPage() {
       if (!form.career.trim()) {
         return 'La carrera es requerida'
       }
+    }
+
+    // 2. Validamos el email (limpio)
+    const cleanEmail = form.email.trim().toLowerCase()
+    if (!universityEmailRegex.test(cleanEmail)) {
+      return 'Usa un correo universitario válido (ejemplo@universidad.edu)'
+    }
+
+    // 3. Validamos la contraseña
+    // Usar .trim().length evita que guarden contraseñas compuestas solo por espacios
+    if (form.password.trim().length < 8) {
+      return 'La contraseña debe tener mínimo 8 caracteres válidos'
     }
 
     return null
@@ -202,8 +205,8 @@ export default function AuthPage() {
               <button
                 type="button"
                 className={`switch-tab ${mode === 'login'
-                    ? 'is-active'
-                    : ''
+                  ? 'is-active'
+                  : ''
                   }`}
                 onClick={() => {
                   setMode('login')
@@ -216,8 +219,8 @@ export default function AuthPage() {
               <button
                 type="button"
                 className={`switch-tab ${mode === 'signup'
-                    ? 'is-active'
-                    : ''
+                  ? 'is-active'
+                  : ''
                   }`}
                 onClick={() => {
                   setMode('signup')

@@ -1,0 +1,185 @@
+:root {
+  --bg-splash: #f0f4f8;        /* El gris/azul claro del fondo de tu captura */
+  --panel-dark: #1e293b;       /* El azul medianoche oscuro */
+  --panel-light: #ffffff;      /* Blanco puro */
+  
+  /* Colores específicos de los iconos de bienestar */
+  --bg-lavender: #e0e7ff;
+  --text-lavender: #4f46e5;
+  
+  --bg-mint: #dcfce7;
+  --text-mint: #16a34a;
+  
+  --bg-violet: #f3e8ff;
+  --text-violet: #9333ea;
+}
+
+/* Base de la página */
+.page--splash {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--bg-splash);
+  font-family: system-ui, -apple-system, sans-serif;
+  padding: 40px 20px;
+  box-sizing: border-box;
+  position: relative;
+}
+
+/* Tarjeta contenedora principal dual */
+.landing-card {
+  display: flex;
+  width: 100%;
+  max-width: 1100px;
+  min-height: 620px;
+  background: var(--panel-light);
+  border-radius: 24px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+}
+
+/* Bloque Izquierdo Oscuro */
+.landing-copy {
+  flex: 1.2;
+  background-color: var(--panel-dark);
+  color: #ffffff;
+  padding: 48px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.landing-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  margin-bottom: 16px;
+  letter-spacing: -0.02em;
+}
+
+.landing-lead {
+  color: #94a3b8;
+  font-size: 0.95rem;
+  line-height: 1.6;
+}
+
+/* Lista de Beneficios */
+.feature-list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.feature-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 16px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.feature-text-group strong {
+  display: block;
+  font-size: 1rem;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.feature-text-group p {
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.4;
+  margin: 0;
+}
+
+/* Controladores individuales de los iconos y sus tonos */
+.feature-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.feature-icon--lavender { background-color: var(--bg-lavender); color: var(--text-lavender); }
+.feature-icon--mint { background-color: var(--bg-mint); color: var(--text-mint); }
+.feature-icon--violet { background-color: var(--bg-violet); color: var(--text-violet); }
+
+/* Botón de acción principal */
+.primary-button {
+  background-color: var(--panel-light);
+  color: var(--panel-dark);
+  border: none;
+  padding: 14px 28px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  width: 100%;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.primary-button:hover {
+  background-color: #f8fafc;
+  transform: translateY(-1px);
+}
+
+/* Bloque Derecho (Contenedor de la foto) */
+.landing-photo-wrap {
+  flex: 1;
+  background-color: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.landing-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* BOTÓN DE LOGOUT FLOTANTE */
+.splash-logout-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #fee2e2;
+  color: #ef4444;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  transition: background-color 0.2s, color 0.2s;
+  z-index: 10;
+}
+
+.splash-logout-btn:hover {
+  background-color: #fca5a5;
+  color: #991b1b;
+}
+
+/* Adaptación para pantallas pequeñas */
+@media (max-width: 768px) {
+  .landing-card {
+    flex-direction: column;
+  }
+  .landing-photo-wrap {
+    display: none; /* Oculta la foto en móviles para enfocar el contenido */
+  }
+}

@@ -33,8 +33,6 @@ export const registerApi = async ({
   try {
     const response = await api.post('/auth/register', {
       name,
-      // IMPORTANTE: Asegúrate de si tu backend espera "lastName1" o "lastName" (en singular). 
-      // Si el backend espera "lastName", cámbialo aquí a: lastName: lastName1
       lastName1, 
       lastName2,
       university,

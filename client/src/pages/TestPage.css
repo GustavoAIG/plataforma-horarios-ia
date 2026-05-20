@@ -1,0 +1,261 @@
+:root {
+  --bg-splash: #f0f4f8;        /* Fondo gris/azul claro general */
+  --panel-dark: #1e293b;       /* Azul medianoche para el botón principal */
+  --panel-light: #ffffff;      /* Blanco para las tarjetas */
+  --text-dark: #0f172a;        /* Texto de las preguntas */
+  --text-muted: #64748b;       /* Texto descriptivo secundario */
+  --border-color: #e2e8f0;     /* Bordes de opciones inactivas */
+  
+  /* Tonos para la opción seleccionada */
+  --bg-selected: #e0e7ff;      /* Fondo lavanda suave */
+  --text-selected: #4f46e5;    /* Texto e icono lavanda oscuro */
+}
+
+/* Base de la página de Test */
+.page--test {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background-color: var(--bg-splash);
+  font-family: system-ui, -apple-system, sans-serif;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Tarjeta Central del Test */
+.test-card {
+  width: 100%;
+  max-width: 680px; /* Tamaño ideal para que las preguntas no se estiren demasiado */
+  background: var(--panel-light);
+  border-radius: 24px;
+  padding: 40px;
+  box-sizing: border-box;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+/* Fila de Encabezado (Icono Cerebro + Título + Progreso) */
+.header-row {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.section-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background-color: var(--panel-dark);
+  color: #ffffff;
+  border-radius: 12px;
+  flex-shrink: 0;
+}
+
+.section-title {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin: 0 0 12px 0;
+}
+
+/* Indicadores de segmentos superiores */
+.progress-row {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 6px;
+}
+
+.progress-segment {
+  flex: 1;
+  height: 6px;
+  background-color: var(--border-color);
+  border-radius: 3px;
+  transition: background-color 0.3s ease;
+}
+
+.progress-segment.is-active {
+  background-color: var(--panel-dark); /* Se van pintando de azul medianoche */
+}
+
+.section-helper {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Bloque de la pregunta actual */
+.question-card {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.question-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Cuadrícula de Opciones (2 columnas para respuestas limpias) */
+.options-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Tarjetas de Opción Individual */
+.option-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--panel-light);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text-dark);
+  transition: all 0.2s ease;
+}
+
+.option-card:hover {
+  border-color: var(--text-muted);
+  background-color: #f8fafc;
+}
+
+/* Estado de Opción Seleccionada (Estilo Lavanda de Stressless) */
+.option-card.is-selected {
+  background-color: var(--bg-selected);
+  border-color: var(--text-selected);
+  color: var(--text-selected);
+  font-weight: 600;
+}
+
+/* El círculo simulador de Radio Button */
+.radio-circle {
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--panel-light);
+  flex-shrink: 0;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.option-card.is-selected .radio-circle {
+  border-color: var(--text-selected);
+}
+
+/* Puntito central cuando está seleccionado */
+.option-card.is-selected .radio-circle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 8px;
+  height: 8px;
+  background-color: var(--text-selected);
+  border-radius: 50%;
+}
+
+/* Fila de acciones inferiores (Atrás, Porcentaje, Siguiente) */
+.test-actions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
+  padding-top: 24px;
+}
+
+.progress-inline {
+  font-size: 0.88rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* Botón Siguiente / Finalizar (Azul medianoche) */
+.primary-button--compact {
+  background-color: var(--panel-dark);
+  color: #ffffff;
+  border: none;
+  padding: 12px 24px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: background-color 0.2s;
+}
+
+.primary-button--compact:hover:not(:disabled) {
+  background-color: #0f172a;
+}
+
+.primary-button--compact:disabled {
+  background-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* Botón Atrás */
+.secondary-button {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondary-button:hover:not(:disabled) {
+  border-color: var(--text-muted);
+  color: var(--text-dark);
+}
+
+.secondary-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.arrow {
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+/* Responsivo para móviles */
+@media (max-width: 580px) {
+  .options-grid {
+    grid-template-columns: 1fr; /* Una sola columna en pantallas pequeñas */
+  }
+  .test-card {
+    padding: 24px;
+  }
+  .test-actions {
+    flex-direction: column-reverse;
+    gap: 16px;
+    align-items: stretch;
+    text-align: center;
+  }
+  .primary-button--compact, .secondary-button {
+    justify-content: center;
+  }
+}
