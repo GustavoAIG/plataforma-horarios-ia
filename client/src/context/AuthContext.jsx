@@ -58,6 +58,13 @@ export function AuthProvider({
   )
 
   /**
+   * UPDATE USER
+   */
+  const updateUser = useCallback((newData) => {
+    setUser((prev) => ({ ...prev, ...newData }))
+  }, [])
+
+  /**
    * LOGIN
    */
   const login = useCallback(
@@ -153,14 +160,16 @@ export function AuthProvider({
     isAuthenticated,
     login,
     register,
-    logout
+    logout,
+    updateUser
   }), [
     user,
     isLoading,
     isAuthenticated,
     login,
     register,
-    logout
+    logout,
+    updateUser
   ])
 
   return (

@@ -82,14 +82,10 @@ export default function AppRouter() {
         {/* APP */}
         <Route element={<PrivateRoute />}>
 
-          <Route element={<AppLayout />}>
-
-            <Route
-              path="/app/calendar"
-              element={<CalendarPage />}
-            />
-
-          </Route>
+          <Route
+            path="/app/calendar"
+            element={<CalendarPage />}
+          />
 
         </Route>
 

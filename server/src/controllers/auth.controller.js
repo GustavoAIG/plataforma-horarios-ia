@@ -16,6 +16,11 @@ export const register = async (req, res) => {
       studyGoal
     } = req.body
 
+    // Prevención de NoSQL Injection
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Formato de credenciales inválido' })
+    }
+
     const normalizedEmail =
       email?.trim().toLowerCase()
 
@@ -121,6 +126,11 @@ export const login = async (req, res) => {
       password
     } = req.body
 
+    // Prevención de NoSQL Injection
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      return res.status(400).json({ message: 'Formato de credenciales inválido' })
+    }
+
     const normalizedEmail =
       email?.trim().toLowerCase()
 
@@ -203,8 +213,17 @@ export const getMe = async (req, res) => {
 
 export const saveLearningAnswers = async (req, res) => {
   try {
-    const { answers } = req.body
-    const user = await userRepository.updateById(req.user._id, { learningAnswers: answers })
+    const { answers, courses } = req.body
+    
+    const updateData = {}
+    if (answers && Array.isArray(answers)) {
+      updateData.learningAnswers = answers
+    }
+    if (courses && Array.isArray(courses)) {
+      updateData.onboardingCourses = courses
+    }
+    
+    const user = await userRepository.updateById(req.user._id, updateData)
     res.json(user)
   } catch (e) {
     res.status(500).json({ message: e.message })

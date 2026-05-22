@@ -29,16 +29,6 @@ export default function OnboardingRoute() {
     )
   }
 
-  // YA COMPLETÓ ONBOARDING
-  if (user.hasCompletedOnboarding) {
-    return (
-      <Navigate
-        to="/app/calendar"
-        replace
-      />
-    )
-  }
-
   // PUEDE ENTRAR
   return <Outlet />
 }

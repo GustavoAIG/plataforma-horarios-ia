@@ -25,7 +25,7 @@ function SparkMarkIcon() {
 export default function CoursesPage() {
   const navigate                      = useNavigate()
   const { state }                     = useLocation()
-  const { user, login }               = useAuth()
+  const { user, updateUser }          = useAuth()
   const [courses, setCourses]         = useState(defaultCourses)
   const [selected, setSelected]       = useState([])
   const [showModal, setShowModal]     = useState(false)
@@ -62,8 +62,26 @@ export default function CoursesPage() {
 
       // Marcar onboarding como completo
       await api.patch('/user/complete-onboarding')
+      
+      // Actualizar el estado global del usuario para que el Router nos deje entrar al Calendario
+      if (updateUser) {
+        updateUser({ hasCompletedOnboarding: true })
+      }
 
-      navigate('/app/calendar', { replace: true })
+      // Pasar los cursos al calendario mediante el estado de navegación
+      navigate('/app/calendar', { 
+        replace: true,
+        state: {
+          generatedPlan: {
+            courses: selected,
+            schedule: selected.map((course, idx) => ({
+              course,
+              time: `${9 + idx}:00 - ${10 + idx}:30`,
+              priority: 'Clase'
+            }))
+          }
+        }
+      })
     } catch (err) {
       setError('Error al guardar tu configuración. Intenta de nuevo.')
     } finally {
@@ -121,8 +139,11 @@ export default function CoursesPage() {
         </div>
 
         <div className="course-actions">
-          <button className="soft-button" type="button" onClick={() => setShowModal(true)}>
+          <button className="btn-lavender" type="button" onClick={() => setShowModal(true)}>
             + Agregar curso manualmente
+          </button>
+          <button className="btn-lavender" type="button" onClick={() => alert('Próximamente: Integración con la universidad')}>
+            + Importar desde sistema universitario
           </button>
         </div>
 
