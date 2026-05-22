@@ -11,13 +11,14 @@
   --text-selected: #4f46e5;    /* Texto e icono lavanda oscuro */
 }
 
-/* Base de la página de Test */
-.page--test {
+/* Base de la página de Test y Cursos */
+.page--test,
+.page--courses {
   display: flex;
   justify-content: center;
   align-items: center;
   min-height: 100vh;
-  background-color: var(--bg-splash);
+  background: linear-gradient(135deg, #6272db 0%, #d46ccf 100%);
   font-family: system-ui, -apple-system, sans-serif;
   padding: 20px;
   box-sizing: border-box;
@@ -201,6 +202,9 @@
   align-items: center;
   gap: 6px;
   transition: background-color 0.2s;
+  width: auto;
+  min-width: 140px;
+  justify-content: center;
 }
 
 .primary-button--compact:hover:not(:disabled) {
@@ -243,10 +247,10 @@
 
 /* Responsivo para móviles */
 @media (max-width: 580px) {
-  .options-grid {
+  .options-grid, .course-grid {
     grid-template-columns: 1fr; /* Una sola columna en pantallas pequeñas */
   }
-  .test-card {
+  .test-card, .courses-card {
     padding: 24px;
   }
   .test-actions {
@@ -258,4 +262,247 @@
   .primary-button--compact, .secondary-button {
     justify-content: center;
   }
+  .course-actions {
+    grid-template-columns: 1fr; /* Apilar botones en celular */
+  }
+}
+
+/* Botón Lavanda para acciones de cursos */
+.btn-lavender {
+  background-color: #e0e7ff; /* Lavanda suave */
+  color: #312e81; /* Texto oscuro */
+  border: none;
+  padding: 14px 22px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  text-align: center;
+}
+
+.btn-lavender:hover {
+  background-color: #c7d2fe;
+}
+
+/* =========================================
+   ESTILOS ESPECÍFICOS DE COURSES PAGE 
+   ========================================= */
+
+.courses-card {
+  width: 100%;
+  max-width: 800px;
+  background: var(--panel-light);
+  border-radius: 24px;
+  padding: 40px;
+  box-sizing: border-box;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.section-subtitle {
+  color: var(--text-muted);
+  font-size: 0.95rem;
+  margin: 0;
+}
+
+.info-banner {
+  background-color: #ecfdf5; /* Verde menta muy claro */
+  color: #065f46;
+  padding: 20px;
+  border-radius: 16px;
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.info-banner strong {
+  display: block;
+  font-size: 1rem;
+  margin-bottom: 4px;
+  color: #064e3b;
+}
+
+.course-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+
+.course-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--panel-light);
+  border: 2px solid var(--border-color);
+  border-radius: 14px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.course-card:hover {
+  border-color: var(--text-muted);
+  background-color: #f8fafc;
+}
+
+.course-card.is-selected {
+  background-color: var(--bg-selected);
+  border-color: var(--text-selected);
+}
+
+.course-card strong {
+  display: block;
+  font-size: 1rem;
+  color: var(--text-dark);
+  margin-bottom: 4px;
+}
+
+.course-card small {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+.course-card.is-selected strong,
+.course-card.is-selected small {
+  color: var(--text-selected);
+}
+
+.checkbox-circle {
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  flex-shrink: 0;
+  position: relative;
+  background: var(--panel-light);
+  transition: all 0.2s ease;
+}
+
+.course-card.is-selected .checkbox-circle {
+  border-color: var(--text-selected);
+}
+
+.course-card.is-selected .checkbox-circle::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 10px;
+  height: 10px;
+  background-color: var(--text-selected);
+  border-radius: 50%;
+}
+
+.course-actions {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.primary-button--wide {
+  width: 100%;
+  background-color: var(--panel-dark);
+  color: #ffffff;
+  border: none;
+  padding: 16px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  margin-top: 12px;
+  transition: background-color 0.2s;
+}
+
+.primary-button--wide:hover:not(:disabled) {
+  background-color: #0f172a;
+}
+
+.primary-button--wide:disabled {
+  background-color: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   MODAL AGREGAR CURSO
+   ========================================= */
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background-color: rgba(15, 23, 42, 0.6); /* Fondo oscuro semitransparente */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  padding: 20px;
+  box-sizing: border-box;
+  backdrop-filter: blur(4px);
+}
+
+.modal-card {
+  background: var(--panel-light);
+  width: 100%;
+  max-width: 460px;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: translateY(20px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.modal-card h3 {
+  margin: 0;
+  color: var(--text-dark);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.modal-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.modal-card input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 0.95rem;
+  color: var(--text-dark);
+  background-color: #f8fafc;
+  outline: none;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.modal-card input:focus {
+  border-color: var(--panel-dark);
+  background-color: var(--panel-light);
+}
+
+.modal-card .auth-submit-row {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
 }
