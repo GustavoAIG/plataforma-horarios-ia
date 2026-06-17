@@ -138,7 +138,7 @@ const MobileNavbar = memo(function MobileNavbar({ activeSection, onSectionChange
 })
 
 // Vista de Tareas
-function TasksSection() {
+function TasksSection({ rawMarkdown }) {
   const [tasks, setTasks] = useState(() => {
     const saved = localStorage.getItem('stressless_tasks')
     return saved ? JSON.parse(saved) : [
@@ -178,6 +178,28 @@ function TasksSection() {
     const updated = tasks.filter(t => t.id !== id)
     saveTasks(updated)
   }
+
+  // Extraer recordatorios o recomendaciones de la IA
+  const aiReminders = useMemo(() => {
+    return extractSectionContent(rawMarkdown, 'Recordatorios Inteligentes')
+  }, [rawMarkdown])
+
+  const aiCoursesRecs = useMemo(() => {
+    return extractSectionContent(rawMarkdown, 'Recomendaciones por Curso')
+  }, [rawMarkdown])
+
+  const recommendationItems = useMemo(() => {
+    const rawList = aiReminders || aiCoursesRecs
+    if (!rawList) return [
+      "Planificar bloques de estudio de 1.5 horas usando mapas conceptuales para los cursos teóricos.",
+      "Resolver guías prácticas inmediatamente después de clases para reforzar la memoria de trabajo.",
+      "Organizar repasos espaciados de 30 minutos antes de rendir entregables y evaluaciones complejas."
+    ]
+    return rawList
+      .split('\n')
+      .map(item => item.replace(/^[-*+\d.]\s*/, '').trim())
+      .filter(Boolean)
+  }, [aiReminders, aiCoursesRecs])
 
   return (
     <div className="tasks-section fade-in">
@@ -248,13 +270,25 @@ function TasksSection() {
             )}
           </div>
         </div>
+
+        <div className="task-form-card" style={{ gridColumn: 'span 2', marginTop: '12px' }}>
+          <h3>💡 Recomendaciones de Organización por IA</h3>
+          <ul className="burnout-tips-list" style={{ listStyleType: 'none', paddingLeft: 0 }}>
+            {recommendationItems.map((rec, idx) => (
+              <li key={idx} style={{ marginBottom: '10px', fontSize: '0.9rem', color: '#475569' }}>
+                ⭐ {rec}
+              </li>
+            ))}
+          </ul>
+        </div>
+
       </div>
     </div>
   )
 }
 
 // Vista Wellness
-function WellnessSection() {
+function WellnessSection({ rawMarkdown }) {
   const [stressLevel, setStressLevel] = useState(45)
   const [breathingText, setBreathingText] = useState('Presiona Iniciar para calmar tu mente')
   const [isBreathing, setIsBreathing] = useState(false)
@@ -291,6 +325,23 @@ function WellnessSection() {
       if (timer) clearInterval(timer)
     }
   }, [timer])
+
+  // Extraer estrategias anti-estrés de la IA
+  const aiStrategy = useMemo(() => {
+    return extractSectionContent(rawMarkdown, 'Estrategia Anti-Estrés')
+  }, [rawMarkdown])
+
+  const strategyItems = useMemo(() => {
+    if (!aiStrategy) return [
+      "Técnica Pomodoro 50/10: Por cada 50 minutos de estudio enfocado, toma 10 minutos de desconexión absoluta.",
+      "Descanso Activo: Levántate del asiento, camina y estira los hombros. Evita pantallas durante tus breaks.",
+      "Regla de 3 Prioridades: Al iniciar el día, anota solo 3 cosas importantes que desees completar."
+    ]
+    return aiStrategy
+      .split('\n')
+      .map(item => item.replace(/^[-*+\d.]\s*/, '').trim())
+      .filter(Boolean)
+  }, [aiStrategy])
 
   return (
     <div className="wellness-section fade-in">
@@ -348,18 +399,14 @@ function WellnessSection() {
           </button>
         </div>
 
-        <div className="wellness-card burnout-tips-card">
-          <h3>Estrategias Recomendadas para Ti</h3>
+        <div className="wellness-card burnout-tips-card" style={{ gridColumn: 'span 2' }}>
+          <h3>🧘 Estrategia de Bienestar Personalizada (IA)</h3>
           <ul className="burnout-tips-list">
-            <li>
-              <strong>Técnica Pomodoro 50/10:</strong> Por cada 50 minutos de estudio enfocado, toma 10 minutos de desconexión absoluta.
-            </li>
-            <li>
-              <strong>Descanso Activo:</strong> Levántate del asiento, camina y estira los hombros. Evita pantallas durante tus breaks.
-            </li>
-            <li>
-              <strong>Regla de 3 Prioridades:</strong> Al iniciar el día, anota solo 3 cosas importantes que desees completar.
-            </li>
+            {strategyItems.map((tip, idx) => (
+              <li key={idx}>
+                <strong>Estrategia #{idx + 1}:</strong> {tip}
+              </li>
+            ))}
           </ul>
         </div>
       </div>
@@ -458,10 +505,28 @@ function WeeklyView({ parsedTable }) {
 
 // Vista Mensual
 function MonthlyView({ parsedTable }) {
+  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 3, 13)) // Abril 2026 por defecto
   const [selectedDay, setSelectedDay] = useState(13)
+
+  const year = currentDate.getFullYear()
+  const monthIndex = currentDate.getMonth()
+
+  const monthNames = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ]
+  const currentMonthName = monthNames[monthIndex]
+
+  // Calcular días del mes actual dinámicamente
+  const totalDays = new Date(year, monthIndex + 1, 0).getDate()
   
-  const totalDays = 30
-  const startOffset = 2 // Abril 2026 empieza el Miércoles (index 2: Lun=0, Mar=1, Mié=2)
+  // Calcular offset (Lunes=0, Martes=1... Domingo=6)
+  const getStartOffset = (yr, mo) => {
+    const day = new Date(yr, mo, 1).getDay() // 0 = Sun, 1 = Mon...
+    return day === 0 ? 6 : day - 1
+  }
+  const startOffset = getStartOffset(year, monthIndex)
+
   const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1)
   const emptyDays = Array.from({ length: startOffset }, () => null)
   const calendarDays = [...emptyDays, ...daysArray]
@@ -481,8 +546,27 @@ function MonthlyView({ parsedTable }) {
     activity: row[selectedDayName] || ''
   })).filter(act => act.activity && act.activity !== '-' && act.activity.toLowerCase() !== 'libre') || []
 
+  const handlePrevMonth = () => {
+    setCurrentDate(new Date(year, monthIndex - 1, 1))
+    setSelectedDay(1)
+  }
+
+  const handleNextMonth = () => {
+    setCurrentDate(new Date(year, monthIndex + 1, 1))
+    setSelectedDay(1)
+  }
+
   return (
     <div className="monthly-view-container fade-in">
+      <div className="monthly-header-row">
+        <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--cal-text)' }}>Calendario de Actividades del Ciclo</h3>
+        <div className="month-navigation-controls">
+          <button onClick={handlePrevMonth} className="btn-month-nav">◀ Anterior</button>
+          <span className="current-month-display">{currentMonthName} {year}</span>
+          <button onClick={handleNextMonth} className="btn-month-nav">Siguiente ▶</button>
+        </div>
+      </div>
+
       <div className="monthly-layout">
         <div className="monthly-grid-card">
           <div className="calendar-grid-header">
@@ -507,7 +591,7 @@ function MonthlyView({ parsedTable }) {
         </div>
 
         <div className="monthly-detail-card">
-          <h3>Detalle: {selectedDayCapitalized} {selectedDay} de Abril</h3>
+          <h3>Detalle: {selectedDayCapitalized} {selectedDay} de {currentMonthName}</h3>
           <div className="monthly-detail-activities">
             {selectedDayActivities.length > 0 ? (
               selectedDayActivities.map((act, idx) => {
@@ -667,9 +751,9 @@ export default function CalendarPage({
         />
 
         {/* CONTENIDO DINÁMICO */}
-        {activeSection === 'tasks' && <TasksSection />}
+        {activeSection === 'tasks' && <TasksSection rawMarkdown={safePlan.rawMarkdown} />}
         
-        {activeSection === 'wellness' && <WellnessSection />}
+        {activeSection === 'wellness' && <WellnessSection rawMarkdown={safePlan.rawMarkdown} />}
         
         {activeSection === 'profile' && <ProfileSection user={user} />}
 

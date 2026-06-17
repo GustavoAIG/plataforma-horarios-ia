@@ -1034,3 +1034,45 @@
   color: #059669;
   border-left-color: #10b981;
 }
+
+/* Navegación mensual */
+.monthly-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  background: #ffffff;
+  padding: 14px 20px;
+  border-radius: 16px;
+  border: 1px solid var(--cal-border);
+}
+
+.month-navigation-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.btn-month-nav {
+  padding: 8px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--cal-border);
+  background: #ffffff;
+  color: var(--cal-text);
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-month-nav:hover {
+  background: var(--cal-sidebar);
+  color: #ffffff;
+}
+
+.current-month-display {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--cal-text);
+  min-width: 140px;
+  text-align: center;
+}
