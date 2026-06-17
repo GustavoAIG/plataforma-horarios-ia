@@ -1,5 +1,6 @@
 import courseRepository from '../repositories/course.repository.js'
 import userRepository from '../repositories/user.repository.js'
+import { extractCoursesFromMalla } from '../services/gemini.service.js'
 
 export const getCourses = async (req, res) => {
   const courses = await courseRepository.findByUser(req.user._id)
@@ -54,4 +55,20 @@ export const deleteCourse = async (req, res) => {
   await userRepository.updateById(req.user._id, { Courses_User: total.length })
 
   res.json({ message: 'Curso eliminado' })
+}
+
+// Analiza una malla curricular (PDF o TXT) y devuelve la lista de cursos detectados.
+export const analyzeMalla = async (req, res) => {
+  try {
+    const { fileBase64, mimeType } = req.body
+    if (!fileBase64 || !mimeType) {
+      return res.status(400).json({ message: 'El archivo base64 y el tipo de contenido (mimeType) son requeridos.' })
+    }
+
+    const courses = await extractCoursesFromMalla({ fileBase64, mimeType })
+    res.json({ courses })
+  } catch (e) {
+    console.error('Error al analizar la malla:', e)
+    res.status(500).json({ message: 'Error de la IA al analizar el documento: ' + e.message })
+  }
 }
