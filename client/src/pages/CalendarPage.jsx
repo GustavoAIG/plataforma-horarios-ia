@@ -751,11 +751,23 @@ export default function CalendarPage({
         />
 
         {/* CONTENIDO DINÁMICO */}
-        {activeSection === 'tasks' && <TasksSection rawMarkdown={safePlan.rawMarkdown} />}
+        {activeSection === 'tasks' && (
+          <main className="cal-main-content">
+            <TasksSection rawMarkdown={safePlan.rawMarkdown} />
+          </main>
+        )}
         
-        {activeSection === 'wellness' && <WellnessSection rawMarkdown={safePlan.rawMarkdown} />}
+        {activeSection === 'wellness' && (
+          <main className="cal-main-content">
+            <WellnessSection rawMarkdown={safePlan.rawMarkdown} />
+          </main>
+        )}
         
-        {activeSection === 'profile' && <ProfileSection user={user} />}
+        {activeSection === 'profile' && (
+          <main className="cal-main-content">
+            <ProfileSection user={user} />
+          </main>
+        )}
 
         {activeSection === 'calendar' && (
           <>
