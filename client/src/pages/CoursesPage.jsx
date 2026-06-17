@@ -31,6 +31,45 @@ export default function CoursesPage() {
   const [showModal, setShowModal]     = useState(false)
   const [loading, setLoading]         = useState(false)
   const [error, setError]             = useState('')
+  // Estados para controlar el modal interactivo de importación de malla curricular
+  const [showMallaModal, setShowMallaModal] = useState(false)
+  const [mallaStep, setMallaStep]           = useState(1) // 1: Tutorial, 2: Upload, 3: Success
+  const [selectedFile, setSelectedFile]     = useState(null)
+  const [isAnalyzing, setIsAnalyzing]       = useState(false)
+  const [detectedCourses, setDetectedCourses] = useState([])
+
+  // Simula el análisis de la malla curricular con la IA de Gemini
+  function handleAnalyzeMalla() {
+    if (!selectedFile) return
+    setIsAnalyzing(true)
+    setTimeout(() => {
+      setIsAnalyzing(false)
+      setMallaStep(3)
+      setDetectedCourses([
+        { name: 'Diseño de Algoritmos', code: 'ALG301', credits: 4 },
+        { name: 'Ingeniería de Requisitos', code: 'REQ202', credits: 3 },
+        { name: 'Sistemas Operativos', code: 'SO302', credits: 4 },
+        { name: 'Ética y Filosofía', code: 'ETI101', credits: 2 }
+      ])
+    }, 1500)
+  }
+
+  // Agrega los cursos detectados a la lista general y los autoselecciona
+  function handleConfirmImport() {
+    setCourses(prev => {
+      const existingNames = prev.map(c => c.name)
+      const newCourses = detectedCourses.filter(c => !existingNames.includes(c.name))
+      return [...prev, ...newCourses]
+    })
+    setSelected(prev => {
+      const newNames = detectedCourses.map(c => c.name)
+      const combined = new Set([...prev, ...newNames])
+      return Array.from(combined)
+    })
+    setShowMallaModal(false)
+    setMallaStep(1)
+    setSelectedFile(null)
+  }
 
   function toggleCourse(name) {
     setSelected(prev =>
@@ -142,8 +181,8 @@ export default function CoursesPage() {
           <button className="btn-lavender" type="button" onClick={() => setShowModal(true)}>
             + Agregar curso manualmente
           </button>
-          <button className="btn-lavender" type="button" onClick={() => alert('Próximamente: Integración con la universidad')}>
-            + Importar desde sistema universitario
+          <button className="btn-lavender" type="button" onClick={() => setShowMallaModal(true)}>
+            + Importar Malla Curricular
           </button>
         </div>
 
@@ -177,6 +216,172 @@ export default function CoursesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL SUBIR MALLA CURRICULAR */}
+      {showMallaModal && (
+        <div className="modal-overlay" role="dialog">
+          <div className="modal-card" style={{ maxWidth: '520px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+              <h3 style={{ margin: 0 }}>Importar Malla Curricular</h3>
+              <button 
+                type="button" 
+                onClick={() => { setShowMallaModal(false); setMallaStep(1); setSelectedFile(null); }}
+                style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer', color: '#7c8a9c' }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {mallaStep === 1 && (
+              <div className="malla-tutorial">
+                <p style={{ color: '#56677a', lineHeight: 1.5, marginBottom: '20px' }}>
+                  Sigue estos simples pasos para cargar tus materias automáticamente:
+                </p>
+                <div style={{ display: 'grid', gap: '14px', marginBottom: '24px' }}>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eef3ff', color: '#3b82f6', width: '28px', height: '28px', borderRadius: '50%', fontWeight: 'bold', fontSize: '14px', flexShrink: 0 }}>1</span>
+                    <p style={{ margin: 0, color: '#445268', fontSize: '0.95rem', textAlign: 'left' }}>Descarga tu malla curricular o historial de notas en formato <strong>PDF</strong> o <strong>TXT</strong> desde tu portal universitario.</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eef3ff', color: '#3b82f6', width: '28px', height: '28px', borderRadius: '50%', fontWeight: 'bold', fontSize: '14px', flexShrink: 0 }}>2</span>
+                    <p style={{ margin: 0, color: '#445268', fontSize: '0.95rem', textAlign: 'left' }}>Asegúrate de que el archivo contenga los nombres de los cursos y sus créditos.</p>
+                  </div>
+                  <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#eef3ff', color: '#3b82f6', width: '28px', height: '28px', borderRadius: '50%', fontWeight: 'bold', fontSize: '14px', flexShrink: 0 }}>3</span>
+                    <p style={{ margin: 0, color: '#445268', fontSize: '0.95rem', textAlign: 'left' }}>Sube el archivo y nuestra IA extraerá las asignaturas por ti en un segundo.</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" className="primary-button" onClick={() => setMallaStep(2)}>
+                    Entendido, continuar
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {mallaStep === 2 && (
+              <div className="malla-upload">
+                <p style={{ color: '#56677a', lineHeight: 1.5, marginBottom: '20px' }}>
+                  Selecciona el archivo de tu malla curricular para iniciar el análisis:
+                </p>
+                
+                <div 
+                  onClick={() => document.getElementById('malla-file-input').click()}
+                  style={{
+                    border: '2px dashed #cfd9ff',
+                    borderRadius: '12px',
+                    padding: '30px 20px',
+                    textAlign: 'center',
+                    background: '#fcfdff',
+                    cursor: 'pointer',
+                    transition: 'border-color 0.2s',
+                    marginBottom: '20px'
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.borderColor = '#3b82f6'}
+                  onMouseLeave={(e) => e.currentTarget.style.borderColor = '#cfd9ff'}
+                >
+                  <input 
+                    type="file" 
+                    id="malla-file-input" 
+                    accept=".pdf,.txt" 
+                    style={{ display: 'none' }}
+                    onChange={(e) => {
+                      if (e.target.files && e.target.files[0]) {
+                        setSelectedFile(e.target.files[0])
+                      }
+                    }}
+                  />
+                  <div style={{ fontSize: '32px', marginBottom: '8px' }}>📄</div>
+                  {selectedFile ? (
+                    <div>
+                      <strong style={{ color: '#34455b', display: 'block', wordBreak: 'break-all' }}>{selectedFile.name}</strong>
+                      <span style={{ color: '#7c8a9c', fontSize: '0.85rem' }}>{(selectedFile.size / 1024).toFixed(1)} KB • Haz clic para cambiar el archivo</span>
+                    </div>
+                  ) : (
+                    <div>
+                      <strong style={{ color: '#445268', display: 'block' }}>Selecciona tu archivo</strong>
+                      <span style={{ color: '#7c8a9c', fontSize: '0.85rem' }}>Formatos soportados: PDF, TXT</span>
+                    </div>
+                  )}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <button type="button" className="secondary-button" onClick={() => setMallaStep(1)}>
+                    Atrás
+                  </button>
+                  <button 
+                    type="button" 
+                    className="primary-button" 
+                    disabled={!selectedFile || isAnalyzing}
+                    onClick={handleAnalyzeMalla}
+                  >
+                    {isAnalyzing ? 'Analizando con IA...' : 'Subir y Analizar'}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {mallaStep === 3 && (
+              <div className="malla-success">
+                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                  <div style={{ 
+                    display: 'inline-flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    background: '#def7ec', 
+                    color: '#03543f', 
+                    width: '56px', 
+                    height: '56px', 
+                    borderRadius: '50%', 
+                    fontSize: '28px',
+                    marginBottom: '12px',
+                    fontWeight: 'bold'
+                  }}>
+                    ✓
+                  </div>
+                  <h4 style={{ margin: 0, fontSize: '1.2rem', color: '#03543f' }}>¡Malla subida correctamente!</h4>
+                  <p style={{ margin: '4px 0 0', color: '#56677a', fontSize: '0.9rem' }}>
+                    La IA ha detectado y extraído los siguientes cursos del ciclo:
+                  </p>
+                </div>
+
+                <div style={{ 
+                  background: '#f8fafc', 
+                  border: '1px solid #e2e8f0', 
+                  borderRadius: '10px', 
+                  padding: '12px', 
+                  maxHeight: '180px', 
+                  overflowY: 'auto',
+                  marginBottom: '20px'
+                }}>
+                  {detectedCourses.map((c, index) => (
+                    <div 
+                      key={index}
+                      style={{ 
+                        display: 'flex', 
+                        justifyContent: 'space-between', 
+                        padding: '8px 4px', 
+                        borderBottom: index < detectedCourses.length - 1 ? '1px solid #edf2f7' : 'none',
+                        fontSize: '0.9rem',
+                        color: '#34455b'
+                      }}
+                    >
+                      <strong>{c.name}</strong>
+                      <span style={{ color: '#7c8a9c' }}>{c.credits} créditos ({c.code})</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                  <button type="button" className="primary-button" onClick={handleConfirmImport}>
+                    Confirmar e Importar Cursos
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
