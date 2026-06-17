@@ -1,4 +1,4 @@
-import { memo } from 'react'
+import { memo, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './CalendarPage.css'
 import { useAuth } from '../context/AuthContext'
@@ -90,6 +90,11 @@ export default function CalendarPage({
   const navigate = useNavigate()
   const location = useLocation()
 
+  // Soporte para modo local/autónomo si no se pasan las props del contenedor
+  const [localMode, setLocalMode] = useState('today')
+  const currentMode = mode || localMode
+  const handleChangeMode = onChangeMode || setLocalMode
+
   // Determinar la clase de color basada en la prioridad/tipo
   const getTypeClass = (priority) => {
     if (!priority) return 'type-clase'
@@ -132,8 +137,8 @@ export default function CalendarPage({
                   {calendarTabs.map((tab) => (
                     <button
                       key={tab.id}
-                      className={`cal-tab-btn ${mode === tab.id ? 'is-active' : ''}`}
-                      onClick={() => onChangeMode(tab.id)}
+                      className={`cal-tab-btn ${currentMode === tab.id ? 'is-active' : ''}`}
+                      onClick={() => handleChangeMode(tab.id)}
                     >
                       {tab.label}
                     </button>
@@ -229,7 +234,7 @@ export default function CalendarPage({
           )}
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
-            <button className="btn-ajustar" onClick={onAdjustSchedule}>
+            <button className="btn-ajustar" onClick={onAdjustSchedule || (() => console.log('Ajustar horario'))}>
               AJUSTAR HORARIO
             </button>
             <button 
