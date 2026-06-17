@@ -2,8 +2,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import dotenv from 'dotenv'
 dotenv.config()
 
+// Inicialización de la API de Google Generative AI usando la clave de entorno.
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+
+// Configuración del modelo: se migró a 'gemini-2.5-flash' ya que la serie 1.5 está en proceso de retiro/deprecación para esta clave.
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
 export const generateSchedule = async ({ courses, preference, learningAnswers, userName }) => {
   // Construimos la lista con los campos reales de MongoDB
