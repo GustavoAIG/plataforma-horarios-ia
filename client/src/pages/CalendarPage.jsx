@@ -1,7 +1,8 @@
-import { memo, useState } from 'react'
+import { memo, useState, useEffect, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import './CalendarPage.css'
 import { useAuth } from '../context/AuthContext'
+import { getLatestScheduleApi } from '../api/schedule'
 
 const calendarTabs = [
   { id: 'today', label: 'Hoy' },
@@ -23,8 +24,38 @@ const Icons = {
   Lightbulb: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A6 6 0 1 0 7.5 11.5c.76.76 1.23 1.52 1.41 2.5"/></svg>
 }
 
+// Función auxiliar para parsear tablas Markdown
+function parseMarkdownTable(markdown) {
+  if (!markdown) return null
+  const lines = markdown.split('\n')
+  const tableLines = lines.filter(line => line.trim().startsWith('|'))
+  if (tableLines.length < 3) return null
+
+  const headers = tableLines[0].split('|').map(h => h.trim()).filter(Boolean)
+  const dataRows = tableLines.slice(2)
+
+  const parsedRows = dataRows.map(row => {
+    const cells = row.split('|').map(c => c.trim()).filter((_, idx) => idx > 0 && idx <= headers.length)
+    const rowObj = {}
+    headers.forEach((header, idx) => {
+      rowObj[header.toLowerCase()] = cells[idx] || ''
+    })
+    return rowObj
+  })
+
+  return { headers, rows: parsedRows }
+}
+
+// Función auxiliar para extraer secciones del markdown
+function extractSectionContent(markdown, headingName) {
+  if (!markdown) return ''
+  const regex = new RegExp(`##\\s*${headingName}[\\r\\n]+([\\s\\S]*?)(##|$)`, 'i')
+  const match = markdown.match(regex)
+  return match ? match[1].trim() : ''
+}
+
 // Sidebar izquierdo fijo
-const SidebarLeft = memo(function SidebarLeft({ user }) {
+const SidebarLeft = memo(function SidebarLeft({ user, activeSection, onSectionChange }) {
   return (
     <aside className="cal-sidebar-left">
       <div className="cal-brand-header">
@@ -33,13 +64,33 @@ const SidebarLeft = memo(function SidebarLeft({ user }) {
       </div>
 
       <nav className="cal-nav-list">
-        <button className="cal-nav-item is-active"><Icons.Calendar /> Calendario</button>
-        <button className="cal-nav-item"><Icons.Check /> Tareas</button>
-        <button className="cal-nav-item"><Icons.Heart /> Wellness</button>
+        <button 
+          className={`cal-nav-item ${activeSection === 'calendar' ? 'is-active' : ''}`}
+          onClick={() => onSectionChange('calendar')}
+        >
+          <Icons.Calendar /> Calendario
+        </button>
+        <button 
+          className={`cal-nav-item ${activeSection === 'tasks' ? 'is-active' : ''}`}
+          onClick={() => onSectionChange('tasks')}
+        >
+          <Icons.Check /> Tareas
+        </button>
+        <button 
+          className={`cal-nav-item ${activeSection === 'wellness' ? 'is-active' : ''}`}
+          onClick={() => onSectionChange('wellness')}
+        >
+          <Icons.Heart /> Wellness
+        </button>
         {user?.role === 'admin' && (
           <button className="cal-nav-item"><Icons.Users /> Admin Panel</button>
         )}
-        <button className="cal-nav-item"><Icons.User /> Perfil</button>
+        <button 
+          className={`cal-nav-item ${activeSection === 'profile' ? 'is-active' : ''}`}
+          onClick={() => onSectionChange('profile')}
+        >
+          <Icons.User /> Perfil
+        </button>
       </nav>
 
       <div className="cal-user-card">
@@ -51,28 +102,432 @@ const SidebarLeft = memo(function SidebarLeft({ user }) {
 })
 
 // Navbar móvil fija abajo
-const MobileNavbar = memo(function MobileNavbar() {
+const MobileNavbar = memo(function MobileNavbar({ activeSection, onSectionChange }) {
   return (
     <nav className="cal-mobile-nav">
-      <button className="cal-nav-btn-mobile is-active">
+      <button 
+        className={`cal-nav-btn-mobile ${activeSection === 'calendar' ? 'is-active' : ''}`}
+        onClick={() => onSectionChange('calendar')}
+      >
         <div className="nav-icon-wrapper"><Icons.Calendar /></div>
         <span>Calendario</span>
       </button>
-      <button className="cal-nav-btn-mobile">
+      <button 
+        className={`cal-nav-btn-mobile ${activeSection === 'tasks' ? 'is-active' : ''}`}
+        onClick={() => onSectionChange('tasks')}
+      >
         <div className="nav-icon-wrapper"><Icons.Check /></div>
         <span>Tareas</span>
       </button>
-      <button className="cal-nav-btn-mobile">
+      <button 
+        className={`cal-nav-btn-mobile ${activeSection === 'wellness' ? 'is-active' : ''}`}
+        onClick={() => onSectionChange('wellness')}
+      >
         <div className="nav-icon-wrapper"><Icons.Heart /></div>
         <span>Bienestar</span>
       </button>
-      <button className="cal-nav-btn-mobile">
+      <button 
+        className={`cal-nav-btn-mobile ${activeSection === 'profile' ? 'is-active' : ''}`}
+        onClick={() => onSectionChange('profile')}
+      >
         <div className="nav-icon-wrapper"><Icons.User /></div>
         <span>Perfil</span>
       </button>
     </nav>
   )
 })
+
+// Vista de Tareas
+function TasksSection() {
+  const [tasks, setTasks] = useState(() => {
+    const saved = localStorage.getItem('stressless_tasks')
+    return saved ? JSON.parse(saved) : [
+      { id: 1, text: 'Revisar lecturas de Ingeniería de Requisitos', completed: false, priority: 'Alta' },
+      { id: 2, text: 'Resolver guía práctica de Diseño de Algoritmos', completed: true, priority: 'Alta' },
+      { id: 3, text: 'Leer material de Sistemas Operativos', completed: false, priority: 'Media' },
+      { id: 4, text: 'Organizar apuntes de Ética', completed: false, priority: 'Baja' }
+    ]
+  })
+  const [newTaskText, setNewTaskText] = useState('')
+  const [newTaskPriority, setNewTaskPriority] = useState('Media')
+
+  const saveTasks = (newTasks) => {
+    setTasks(newTasks)
+    localStorage.setItem('stressless_tasks', JSON.stringify(newTasks))
+  }
+
+  const handleAddTask = (e) => {
+    e.preventDefault()
+    if (!newTaskText.trim()) return
+    const newTask = {
+      id: Date.now(),
+      text: newTaskText.trim(),
+      completed: false,
+      priority: newTaskPriority
+    }
+    saveTasks([...tasks, newTask])
+    setNewTaskText('')
+  }
+
+  const handleToggleTask = (id) => {
+    const updated = tasks.map(t => t.id === id ? { ...t, completed: !t.completed } : t)
+    saveTasks(updated)
+  }
+
+  const handleDeleteTask = (id) => {
+    const updated = tasks.filter(t => t.id !== id)
+    saveTasks(updated)
+  }
+
+  return (
+    <div className="tasks-section fade-in">
+      <div className="cal-header-top">
+        <div className="cal-header-text">
+          <h1>Mis Tareas y Entregables</h1>
+          <p>Organiza tus actividades para reducir el estrés académico</p>
+        </div>
+      </div>
+
+      <div className="tasks-container-layout">
+        <div className="task-form-card">
+          <h3>Añadir Nueva Tarea</h3>
+          <form onSubmit={handleAddTask}>
+            <div className="form-group">
+              <label>Descripción</label>
+              <input 
+                type="text" 
+                value={newTaskText} 
+                onChange={(e) => setNewTaskText(e.target.value)} 
+                placeholder="Ej: Estudiar para el examen de algoritmos..." 
+                required 
+              />
+            </div>
+            <div className="form-group">
+              <label>Prioridad</label>
+              <select value={newTaskPriority} onChange={(e) => setNewTaskPriority(e.target.value)}>
+                <option value="Alta">Alta 🔥</option>
+                <option value="Media">Media ⚡</option>
+                <option value="Baja">Baja 🟢</option>
+              </select>
+            </div>
+            <button type="submit" className="primary-button primary-button--wide">
+              Añadir Tarea
+            </button>
+          </form>
+        </div>
+
+        <div className="tasks-list-card">
+          <h3>Lista de Actividades</h3>
+          <div className="tasks-list-scroll">
+            {tasks.length > 0 ? (
+              tasks.map(t => (
+                <div key={t.id} className={`task-item ${t.completed ? 'is-completed' : ''}`}>
+                  <div className="task-item-left">
+                    <input 
+                      type="checkbox" 
+                      checked={t.completed} 
+                      onChange={() => handleToggleTask(t.id)} 
+                      id={`task-chk-${t.id}`}
+                    />
+                    <label htmlFor={`task-chk-${t.id}`} className="task-text">{t.text}</label>
+                  </div>
+                  <div className="task-item-right">
+                    <span className={`task-priority-badge priority-${t.priority.toLowerCase()}`}>
+                      {t.priority}
+                    </span>
+                    <button type="button" className="task-delete-btn" onClick={() => handleDeleteTask(t.id)}>
+                      🗑️
+                    </button>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="empty-tasks">
+                <p>¡Buen trabajo! No tienes tareas pendientes. 🎉</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Vista Wellness
+function WellnessSection() {
+  const [stressLevel, setStressLevel] = useState(45)
+  const [breathingText, setBreathingText] = useState('Presiona Iniciar para calmar tu mente')
+  const [isBreathing, setIsBreathing] = useState(false)
+  const [timer, setTimer] = useState(null)
+
+  const handleStartBreathing = () => {
+    if (isBreathing) {
+      clearInterval(timer)
+      setIsBreathing(false)
+      setBreathingText('Presiona Iniciar para calmar tu mente')
+      return
+    }
+
+    setIsBreathing(true)
+    let step = 0
+    const textSteps = [
+      'Inhala profundamente por la nariz... (4s) 🌬️',
+      'Mantén el aire... (4s) ⏳',
+      'Exhala lentamente por la boca... (4s) 💨',
+      'Espera antes de inhalar... (4s) ⏳'
+    ]
+    setBreathingText(textSteps[0])
+    
+    const interval = setInterval(() => {
+      step = (step + 1) % 4
+      setBreathingText(textSteps[step])
+    }, 4000)
+
+    setTimer(interval)
+  }
+
+  useEffect(() => {
+    return () => {
+      if (timer) clearInterval(timer)
+    }
+  }, [timer])
+
+  return (
+    <div className="wellness-section fade-in">
+      <div className="cal-header-top">
+        <div className="cal-header-text">
+          <h1>Centro de Bienestar Universitario</h1>
+          <p>Herramientas y técnicas para gestionar tu salud mental y reducir la ansiedad</p>
+        </div>
+      </div>
+
+      <div className="wellness-grid-layout">
+        <div className="wellness-card stress-meter-card">
+          <h3>Indicador de Estrés Académico</h3>
+          <p>Basado en tu carga horaria y estilo de aprendizaje detectado.</p>
+          <div className="stress-gauge-container">
+            <div className="stress-progress-bar">
+              <div 
+                className="stress-progress-fill" 
+                style={{ 
+                  width: `${stressLevel}%`, 
+                  backgroundColor: stressLevel < 40 ? '#10b981' : stressLevel < 70 ? '#f59e0b' : '#ef4444' 
+                }} 
+              />
+            </div>
+            <div className="stress-value-label">
+              <span>Relajado</span>
+              <strong>{stressLevel}% - Estrés Controlado</strong>
+              <span>Saturado</span>
+            </div>
+          </div>
+          <div className="stress-actions-row">
+            <button className="btn-wellness-action" onClick={() => setStressLevel(Math.max(10, stressLevel - 15))}>
+              🧘 Realicé un descanso (-15%)
+            </button>
+            <button className="btn-wellness-action" onClick={() => setStressLevel(Math.min(100, stressLevel + 10))}>
+              📚 Agregué más horas (+10%)
+            </button>
+          </div>
+        </div>
+
+        <div className="wellness-card breathing-card">
+          <h3>Respiración Guiada (Caja)</h3>
+          <p>Tómate 2 minutos para estabilizar tu ritmo cardíaco y recuperar el enfoque.</p>
+          <div className={`breathing-circle-wrapper ${isBreathing ? 'is-animating' : ''}`}>
+            <div className="breathing-circle">
+              <span className="breathing-state-text">{isBreathing ? 'Respirando' : 'Detenido'}</span>
+            </div>
+          </div>
+          <div className="breathing-helper-text">{breathingText}</div>
+          <button 
+            className={`primary-button ${isBreathing ? 'secondary-button' : ''}`} 
+            onClick={handleStartBreathing}
+          >
+            {isBreathing ? 'Detener Ejercicio' : 'Iniciar Respiración'}
+          </button>
+        </div>
+
+        <div className="wellness-card burnout-tips-card">
+          <h3>Estrategias Recomendadas para Ti</h3>
+          <ul className="burnout-tips-list">
+            <li>
+              <strong>Técnica Pomodoro 50/10:</strong> Por cada 50 minutos de estudio enfocado, toma 10 minutos de desconexión absoluta.
+            </li>
+            <li>
+              <strong>Descanso Activo:</strong> Levántate del asiento, camina y estira los hombros. Evita pantallas durante tus breaks.
+            </li>
+            <li>
+              <strong>Regla de 3 Prioridades:</strong> Al iniciar el día, anota solo 3 cosas importantes que desees completar.
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Vista Perfil
+function ProfileSection({ user }) {
+  const { logout } = useAuth()
+  const navigate = useNavigate()
+
+  return (
+    <div className="profile-section fade-in">
+      <div className="cal-header-top">
+        <div className="cal-header-text">
+          <h1>Mi Perfil</h1>
+          <p>Administra tu cuenta y tus preferencias de estudio</p>
+        </div>
+      </div>
+
+      <div className="profile-container-layout">
+        <div className="profile-info-card">
+          <div className="profile-avatar">👤</div>
+          <h2>Estudiante Stressless</h2>
+          <div className="profile-details-list">
+            <div className="profile-detail-item">
+              <span className="label">Correo Electrónico:</span>
+              <strong className="value">{user?.Email_User || 'estudiante@uni.edu'}</strong>
+            </div>
+            <div className="profile-detail-item">
+              <span className="label">Rol en la Plataforma:</span>
+              <strong className="value">{user?.role || 'Estudiante'}</strong>
+            </div>
+            <div className="profile-detail-item">
+              <span className="label">Cursos Registrados:</span>
+              <strong className="value">{user?.Courses_User || 0} cursos</strong>
+            </div>
+          </div>
+          
+          <div className="profile-buttons-row">
+            <button className="primary-button" onClick={() => navigate('/onboarding')}>
+              🔄 Re-hacer Test de Aprendizaje
+            </button>
+            <button 
+              className="primary-button" 
+              style={{ backgroundColor: '#ef4444', border: 'none' }}
+              onClick={logout}
+            >
+              🚪 Cerrar Sesión
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// Vista Semanal
+function WeeklyView({ parsedTable }) {
+  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+  
+  return (
+    <div className="weekly-grid-container fade-in">
+      {days.map(day => {
+        const dayLower = day.toLowerCase()
+        const activities = parsedTable?.rows.map(row => ({
+          time: row['hora'] || '',
+          activity: row[dayLower] || ''
+        })).filter(act => act.activity && act.activity !== '-' && act.activity.toLowerCase() !== 'libre') || []
+
+        return (
+          <div key={day} className="weekly-day-card">
+            <h3 className="weekly-day-title">{day}</h3>
+            <div className="weekly-activities-list">
+              {activities.length > 0 ? (
+                activities.map((act, idx) => {
+                  const isBreak = act.activity.toLowerCase().includes('descanso') || act.activity.toLowerCase().includes('break')
+                  return (
+                    <div key={idx} className={`weekly-activity-item ${isBreak ? 'type-break' : 'type-estudio'}`}>
+                      <span className="time">{act.time}</span>
+                      <span className="activity">{act.activity}</span>
+                    </div>
+                  )
+                })
+              ) : (
+                <p className="no-activities">Día libre 🏖️</p>
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// Vista Mensual
+function MonthlyView({ parsedTable }) {
+  const [selectedDay, setSelectedDay] = useState(13)
+  
+  const totalDays = 30
+  const startOffset = 2 // Abril 2026 empieza el Miércoles (index 2: Lun=0, Mar=1, Mié=2)
+  const daysArray = Array.from({ length: totalDays }, (_, i) => i + 1)
+  const emptyDays = Array.from({ length: startOffset }, () => null)
+  const calendarDays = [...emptyDays, ...daysArray]
+
+  const daysOfWeekNames = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo']
+  
+  const getDayOfWeekName = (day) => {
+    const dayOfWeekIndex = (day - 1 + startOffset) % 7
+    return daysOfWeekNames[dayOfWeekIndex]
+  }
+
+  const selectedDayName = getDayOfWeekName(selectedDay)
+  const selectedDayCapitalized = selectedDayName.charAt(0).toUpperCase() + selectedDayName.slice(1)
+
+  const selectedDayActivities = parsedTable?.rows.map(row => ({
+    time: row['hora'] || '',
+    activity: row[selectedDayName] || ''
+  })).filter(act => act.activity && act.activity !== '-' && act.activity.toLowerCase() !== 'libre') || []
+
+  return (
+    <div className="monthly-view-container fade-in">
+      <div className="monthly-layout">
+        <div className="monthly-grid-card">
+          <div className="calendar-grid-header">
+            <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+          </div>
+          <div className="calendar-grid-body">
+            {calendarDays.map((day, idx) => (
+              <div 
+                key={idx} 
+                className={`calendar-day-cell ${day === null ? 'is-empty' : ''} ${day === selectedDay ? 'is-selected' : ''}`}
+                onClick={() => day !== null && setSelectedDay(day)}
+              >
+                {day && (
+                  <>
+                    <span className="day-number">{day}</span>
+                    {day % 2 === 0 && <span className="day-indicator" />}
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="monthly-detail-card">
+          <h3>Detalle: {selectedDayCapitalized} {selectedDay} de Abril</h3>
+          <div className="monthly-detail-activities">
+            {selectedDayActivities.length > 0 ? (
+              selectedDayActivities.map((act, idx) => {
+                const isBreak = act.activity.toLowerCase().includes('descanso') || act.activity.toLowerCase().includes('break')
+                return (
+                  <div key={idx} className={`monthly-detail-item ${isBreak ? 'type-break' : 'type-estudio'}`}>
+                    <strong>{act.time}</strong>
+                    <span>{act.activity}</span>
+                  </div>
+                )
+              })
+            ) : (
+              <p className="no-activities">Día libre para descanso y actividades personales. 🏖️</p>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 export default function CalendarPage({
   mode,
@@ -89,139 +544,242 @@ export default function CalendarPage({
   const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
-
+  
   // Soporte para modo local/autónomo si no se pasan las props del contenedor
   const [localMode, setLocalMode] = useState('today')
   const currentMode = mode || localMode
   const handleChangeMode = onChangeMode || setLocalMode
+
+  // Estado para la sección activa de la barra lateral (calendar, tasks, wellness, profile)
+  const [activeSection, setActiveSection] = useState('calendar')
+
+  // Estado para almacenar el plan de estudio guardado en la base de datos
+  const [dbPlan, setDbPlan] = useState(null)
+  const [loadingSchedule, setLoadingSchedule] = useState(false)
+
+  // Obtener horario desde la base de datos al montar
+  useEffect(() => {
+    async function fetchSchedule() {
+      setLoadingSchedule(true)
+      try {
+        const data = await getLatestScheduleApi()
+        if (data) {
+          setDbPlan(data)
+        }
+      } catch (err) {
+        console.error('Error al obtener el horario guardado:', err)
+      } finally {
+        setLoadingSchedule(false)
+      }
+    }
+    fetchSchedule()
+  }, [])
+
+  // Determinar el plan que vamos a mostrar (Base de datos prioritario, fallback a estado de navegación o vacío)
+  const safePlan = useMemo(() => {
+    if (dbPlan && dbPlan.aiPlan) {
+      return {
+        isAiGenerated: true,
+        rawMarkdown: dbPlan.aiPlan,
+        courses: dbPlan.courses || [],
+        schedule: []
+      }
+    }
+    const navPlan = location.state?.generatedPlan || plan
+    if (navPlan) {
+      return navPlan
+    }
+    return { 
+      courses: user?.onboardingCourses || [] 
+    }
+  }, [dbPlan, plan, location.state, user])
+
+  // Parser para la tabla de markdown
+  const parsedTable = useMemo(() => {
+    if (!safePlan.rawMarkdown) return null
+    return parseMarkdownTable(safePlan.rawMarkdown)
+  }, [safePlan.rawMarkdown])
+
+  // Tabla simulada hermosa si no hay una tabla cargada desde la IA
+  const mockWeeklyTable = useMemo(() => {
+    return {
+      rows: [
+        { hora: '09:00 - 10:30', lunes: 'Estadística', martes: 'Cálculo Avanzado', miércoles: 'Física II', jueves: 'Matemáticas III', viernes: 'Química Orgánica', sábado: 'Programación II', domingo: 'Descanso' },
+        { hora: '11:00 - 12:30', lunes: 'Física II', martes: 'Descanso', miércoles: 'Estadística', jueves: 'Química Orgánica', viernes: 'Programación II', sábado: 'Cálculo Avanzado', domingo: 'Descanso' },
+        { hora: '14:00 - 15:30', lunes: 'Descanso', martes: 'Estudio: Cálculo', miércoles: 'Estudio: Física', jueves: 'Descanso', viernes: 'Estudio: Química', sábado: 'Descanso', domingo: 'Descanso' }
+      ]
+    }
+  }, [])
+
+  const activeParsedTable = parsedTable || mockWeeklyTable
 
   // Determinar la clase de color basada en la prioridad/tipo
   const getTypeClass = (priority) => {
     if (!priority) return 'type-clase'
     const p = priority.toLowerCase()
     if (p.includes('clase')) return 'type-clase'
-    if (p.includes('estudio')) return 'type-estudio'
+    if (p.includes('estudio') || p.includes('repaso')) return 'type-estudio'
     if (p.includes('break') || p.includes('descanso')) return 'type-break'
     return 'type-clase'
   }
 
-  const safePlan = plan || location.state?.generatedPlan || { courses: user?.onboardingCourses || [] }
-  
-  // Para saber si realmente hay un plan con horarios generados o solo un listado de cursos vacíos
-  const hasSchedule = safePlan.schedule && safePlan.schedule.length > 0
+  // Generar actividades para el día de "Hoy" dinámicamente si tenemos la tabla parseada
+  const todayActivities = useMemo(() => {
+    if (safePlan.schedule && safePlan.schedule.length > 0) {
+      return safePlan.schedule
+    }
+    
+    // Si tenemos tabla parseada, filtramos para el día de la semana actual
+    if (activeParsedTable) {
+      const daysOfWeek = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+      const todayIndex = new Date().getDay()
+      const todayName = daysOfWeek[todayIndex]
+      
+      const extracted = activeParsedTable.rows.map(row => ({
+        time: row['hora'] || '',
+        course: row[todayName] || '',
+        priority: (row[todayName] || '').toLowerCase().includes('descanso') || (row[todayName] || '').toLowerCase().includes('break') ? 'Descanso' : 'Estudio'
+      })).filter(act => act.course && act.course !== '-' && act.course.toLowerCase() !== 'libre')
+
+      if (extracted.length > 0) return extracted
+    }
+
+    // Fallback de demostración si no hay nada
+    return [
+      { course: 'Estadística', time: '09:00 - 10:30', priority: 'Clase' },
+      { course: 'Cálculo Avanzado', time: '11:00 - 12:30', priority: 'Clase' },
+      { course: 'Descanso Activo', time: '12:30 - 13:00', priority: 'Descanso' },
+      { course: 'Estudio Independiente: Física II', time: '14:00 - 15:30', priority: 'Estudio' }
+    ]
+  }, [safePlan.schedule, activeParsedTable])
+
+  const hasSchedule = todayActivities.length > 0
 
   return (
     <section className="page--calendar">
       <div className="calendar-app-container">
         
-        {/* SIDEBAR IZQUIERDO (Desktop) */}
-        <SidebarLeft user={user} />
+        {/* SIDEBAR IZQUIERDO */}
+        <SidebarLeft 
+          user={user} 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection} 
+        />
 
-        {/* CONTENIDO PRINCIPAL */}
-        <main className="cal-main-content">
-          
-          {!hasSchedule ? (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', textAlign: 'center' }}>
-              <h2>Aún no has generado tu horario</h2>
-              <p>Realiza el Test de Aprendizaje para que nuestra IA pueda organizar tus tiempos.</p>
-            </div>
-          ) : (
-            <>
-              <div className="cal-header-top">
-                <div className="cal-header-text">
-                  <h1>Horario de Hoy</h1>
-                  <p>Lunes, 13 de Abril 2026</p> {/* Hardcodeado momentáneamente o usar plan.date si tiene ese formato */}
+        {/* CONTENIDO DINÁMICO */}
+        {activeSection === 'tasks' && <TasksSection />}
+        
+        {activeSection === 'wellness' && <WellnessSection />}
+        
+        {activeSection === 'profile' && <ProfileSection user={user} />}
+
+        {activeSection === 'calendar' && (
+          <>
+            <main className="cal-main-content">
+              {!hasSchedule ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', textAlign: 'center' }}>
+                  <h2>Aún no has generado tu horario</h2>
+                  <p>Realiza el Test de Aprendizaje para que nuestra IA pueda organizar tus tiempos.</p>
                 </div>
-
-                <div className="cal-tabs">
-                  {calendarTabs.map((tab) => (
-                    <button
-                      key={tab.id}
-                      className={`cal-tab-btn ${currentMode === tab.id ? 'is-active' : ''}`}
-                      onClick={() => handleChangeMode(tab.id)}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="cal-banner-ia">
-                <strong><Icons.Sparkles /> Generado por IA - Basado en tu estilo de aprendizaje y disponibilidad</strong>
-                <div className="cal-banner-features">
-                  <span>✓ Tiempo de estudio distribuido</span>
-                  <span>✓ Descansos programados</span>
-                  <span>✓ Preparación anticipada</span>
-                </div>
-              </div>
-
-              <div className="cal-schedule-list">
-                {safePlan.schedule?.length > 0 ? (
-                  safePlan.schedule.map((item, index) => {
-                const typeClass = getTypeClass(item.priority)
-                return (
-                  <div key={index} className={`schedule-card ${typeClass}`}>
-                    <div className="schedule-info">
-                      <h4>{item.course}</h4>
-                      <p>{item.time}</p>
-                      {item.location && (
-                        <p style={{ marginTop: '6px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                          <Icons.MapPin /> {item.location}
-                        </p>
-                      )}
-                    </div>
-                    <div className={`schedule-badge ${typeClass}`}>
-                      {item.priority || 'Clase'}
-                    </div>
-                  </div>
-                )
-              })
-                ) : (
-                  <p style={{ color: '#64748b' }}>No hay actividades programadas.</p>
-                )}
-              </div>
-
-              {/* Info green box para MOBILE */}
-              <div className="cal-info-green-mobile">
-                <strong><Icons.Lightbulb /> Reducción de Estrés</strong>
-                <p>Este horario distribuye tu carga académica de forma equilibrada, evitando saturación y preparación de último minuto.</p>
-              </div>
-            </>
-          )}
-
-        </main>
-
-        {/* SIDEBAR DERECHO (Desktop) */}
-        <aside className="cal-sidebar-right">
-          
-          <div className="cal-right-panel">
-            <h3><Icons.Calendar /> Mis Cursos</h3>
-            <div>
-              {safePlan.courses?.length > 0 ? (
-                safePlan.courses.map((course, idx) => (
-                  <div key={idx} className="cal-course-item">
-                    <span>{course}</span>
-                    <span className="dot" />
-                  </div>
-                ))
               ) : (
-                <p style={{ fontSize: '0.85rem', color: '#64748b' }}>Sin cursos</p>
-              )}
-            </div>
-          </div>
+                <>
+                  <div className="cal-header-top">
+                    <div className="cal-header-text">
+                      {currentMode === 'today' && <h1>Horario de Hoy</h1>}
+                      {currentMode === 'week' && <h1>Horario Semanal</h1>}
+                      {currentMode === 'month' && <h1>Calendario Mensual</h1>}
+                      <p>
+                        {currentMode === 'today' && `${new Date().toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}`}
+                        {currentMode !== 'today' && 'Organización inteligente de tu ciclo académico'}
+                      </p>
+                    </div>
 
-          {hasSchedule && (
-            <>
+                    <div className="cal-tabs">
+                      {calendarTabs.map((tab) => (
+                        <button
+                          key={tab.id}
+                          className={`cal-tab-btn ${currentMode === tab.id ? 'is-active' : ''}`}
+                          onClick={() => handleChangeMode(tab.id)}
+                        >
+                          {tab.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="cal-banner-ia">
+                    <strong><Icons.Sparkles /> Generado por IA - Basado en tu estilo de aprendizaje y disponibilidad</strong>
+                    <div className="cal-banner-features">
+                      <span>✓ Tiempo de estudio distribuido</span>
+                      <span>✓ Descansos programados</span>
+                      <span>✓ Preparación anticipada</span>
+                    </div>
+                  </div>
+
+                  {/* Vistas condicionales de calendario */}
+                  {currentMode === 'today' && (
+                    <div className="cal-schedule-list fade-in">
+                      {todayActivities.map((item, index) => {
+                        const typeClass = getTypeClass(item.priority)
+                        return (
+                          <div key={index} className={`schedule-card ${typeClass}`}>
+                            <div className="schedule-info">
+                              <h4>{item.course}</h4>
+                              <p>{item.time}</p>
+                            </div>
+                            <div className={`schedule-badge ${typeClass}`}>
+                              {item.priority || 'Clase'}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+
+                  {currentMode === 'week' && (
+                    <WeeklyView parsedTable={activeParsedTable} />
+                  )}
+
+                  {currentMode === 'month' && (
+                    <MonthlyView parsedTable={activeParsedTable} />
+                  )}
+
+                  <div className="cal-info-green-mobile">
+                    <strong><Icons.Lightbulb /> Reducción de Estrés</strong>
+                    <p>Este horario distribuye tu carga académica de forma equilibrada, evitando la fatiga mental.</p>
+                  </div>
+                </>
+              )}
+            </main>
+
+            {/* SIDEBAR DERECHO */}
+            <aside className="cal-sidebar-right">
+              <div className="cal-right-panel">
+                <h3><Icons.Calendar /> Mis Cursos</h3>
+                <div>
+                  {safePlan.courses?.length > 0 ? (
+                    safePlan.courses.map((course, idx) => (
+                      <div key={idx} className="cal-course-item">
+                        <span>{typeof course === 'object' ? course.Name_Course : course}</span>
+                        <span className="dot" />
+                      </div>
+                    ))
+                  ) : (
+                    <p style={{ fontSize: '0.85rem', color: '#64748b' }}>Sin cursos registrados</p>
+                  )}
+                </div>
+              </div>
+
               <div className="cal-right-panel">
                 <h3><Icons.Bell /> Recordatorios Inteligentes</h3>
                 <div>
                   <div className="cal-reminder-item">
-                    <strong>Examen Parcial Matemáticas III</strong>
-                    <span>En 5 días • Recordatorio configurado</span>
+                    <strong>Preparación de Exámenes</strong>
+                    <span>En 5 días • Configuración activa</span>
                   </div>
                   <div className="cal-reminder-item">
-                    <strong>Entrega Proyecto Física II</strong>
-                    <span>En 7 días • Recordatorio configurado</span>
+                    <strong>Revisión de Tareas</strong>
+                    <span>En 7 días • Configuración activa</span>
                   </div>
                 </div>
               </div>
@@ -230,26 +788,21 @@ export default function CalendarPage({
                 <strong><Icons.Lightbulb /> Reducción de Estrés</strong>
                 <p>Este horario distribuye tu carga académica de forma equilibrada, evitando saturación y preparación de último minuto.</p>
               </div>
-            </>
-          )}
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
-            <button className="btn-ajustar" onClick={onAdjustSchedule || (() => console.log('Ajustar horario'))}>
-              AJUSTAR HORARIO
-            </button>
-            <button 
-              className="btn-ajustar" 
-              style={{ backgroundColor: '#ffffff', color: '#2C3E50', border: '2px solid #2C3E50', boxShadow: 'none' }}
-              onClick={() => navigate('/onboarding')}
-            >
-              VOLVER A REALIZAR TEST
-            </button>
-          </div>
-
-        </aside>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: 'auto' }}>
+                <button className="btn-ajustar" onClick={onAdjustSchedule || (() => navigate('/onboarding'))}>
+                  AJUSTAR HORARIO
+                </button>
+              </div>
+            </aside>
+          </>
+        )}
 
         {/* NAVBAR INFERIOR (Mobile) */}
-        <MobileNavbar />
+        <MobileNavbar 
+          activeSection={activeSection} 
+          onSectionChange={setActiveSection} 
+        />
 
       </div>
     </section>
