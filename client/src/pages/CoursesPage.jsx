@@ -38,20 +38,38 @@ export default function CoursesPage() {
   const [isAnalyzing, setIsAnalyzing]       = useState(false)
   const [detectedCourses, setDetectedCourses] = useState([])
 
-  // Simula el análisis de la malla curricular con la IA de Gemini
+  // Convierte el archivo a base64 y envía la solicitud al backend para extraer los cursos usando la IA de Gemini
   function handleAnalyzeMalla() {
     if (!selectedFile) return
     setIsAnalyzing(true)
-    setTimeout(() => {
+    
+    const reader = new FileReader()
+    reader.readAsDataURL(selectedFile)
+    reader.onload = async () => {
+      try {
+        const base64Data = reader.result.split(',')[1]
+        const response = await api.post('/courses/analyze-malla', {
+          fileBase64: base64Data,
+          mimeType: selectedFile.type || 'application/pdf'
+        })
+        
+        if (response.data && response.data.courses) {
+          setDetectedCourses(response.data.courses)
+          setMallaStep(3)
+        } else {
+          alert('No se pudieron extraer cursos válidos del archivo.')
+        }
+      } catch (err) {
+        console.error('Error al analizar malla:', err)
+        alert(err.response?.data?.message || 'Error al procesar el archivo con la IA.')
+      } finally {
+        setIsAnalyzing(false)
+      }
+    }
+    reader.onerror = () => {
+      alert('Error al leer el archivo.')
       setIsAnalyzing(false)
-      setMallaStep(3)
-      setDetectedCourses([
-        { name: 'Diseño de Algoritmos', code: 'ALG301', credits: 4 },
-        { name: 'Ingeniería de Requisitos', code: 'REQ202', credits: 3 },
-        { name: 'Sistemas Operativos', code: 'SO302', credits: 4 },
-        { name: 'Ética y Filosofía', code: 'ETI101', credits: 2 }
-      ])
-    }, 1500)
+    }
   }
 
   // Agrega los cursos detectados a la lista general y los autoselecciona
