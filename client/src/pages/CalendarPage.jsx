@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import './CalendarPage.css'
 import { useAuth } from '../context/AuthContext'
 import { getLatestScheduleApi } from '../api/schedule'
+import api from '../api/axios'
 
 const calendarTabs = [
   { id: 'today', label: 'Hoy' },
@@ -30,6 +31,27 @@ function blocksForDay(blocks, dayName) {
   return (blocks || [])
     .filter((b) => b.day === dayName)
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
+}
+
+function getSemesterRange(semesterStartDate, semesterWeeks) {
+  if (!semesterStartDate) return null
+  const start = new Date(semesterStartDate)
+  if (isNaN(start.getTime())) return null
+  
+  start.setHours(0, 0, 0, 0)
+  
+  const weeks = Number(semesterWeeks) || 16
+  const end = new Date(start)
+  end.setDate(start.getDate() + weeks * 7 - 1)
+  end.setHours(23, 59, 59, 999)
+  
+  return { start, end }
+}
+
+function isDateWithinSemester(date, range) {
+  if (!range) return true
+  const time = date.getTime()
+  return time >= range.start.getTime() && time <= range.end.getTime()
 }
 
 // Función auxiliar para parsear tablas Markdown
@@ -424,8 +446,60 @@ function WellnessSection({ rawMarkdown }) {
 
 // Vista Perfil
 function ProfileSection({ user }) {
-  const { logout } = useAuth()
+  const { logout, updateUser } = useAuth()
   const navigate = useNavigate()
+
+  // Local state for profile form
+  const [weeks, setWeeks] = useState(user?.semesterWeeks || 16)
+  const [startDate, setStartDate] = useState(() => {
+    if (user?.semesterStartDate) {
+      return new Date(user.semesterStartDate).toISOString().slice(0, 10)
+    }
+    return ''
+  })
+  const [errorMsg, setErrorMsg] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault()
+    setErrorMsg('')
+    setSuccessMsg('')
+    
+    const weeksNum = Number(weeks)
+    if (!weeks || !Number.isInteger(weeksNum) || weeksNum < 1 || weeksNum > 52) {
+      setErrorMsg('La duración del semestre debe ser un número entero entre 1 y 52 semanas.')
+      return
+    }
+
+    if (!startDate) {
+      setErrorMsg('Debes seleccionar una fecha de inicio para tu semestre académico.')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const response = await api.patch('/user/profile', {
+        semesterWeeks: weeksNum,
+        semesterStartDate: startDate
+      })
+
+      if (response.data && response.data.ok) {
+        setSuccessMsg('¡Configuración guardada exitosamente!')
+        if (updateUser) {
+          updateUser({
+            semesterWeeks: weeksNum,
+            semesterStartDate: startDate
+          })
+        }
+      }
+    } catch (err) {
+      console.error('Error al guardar el perfil:', err)
+      setErrorMsg(err.response?.data?.message || 'Error al guardar los cambios.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <div className="profile-section fade-in">
@@ -455,18 +529,109 @@ function ProfileSection({ user }) {
             </div>
           </div>
           
-          <div className="profile-buttons-row">
-            <button className="primary-button" onClick={() => navigate('/onboarding')}>
+          <div className="profile-buttons-row" style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%', marginTop: '20px' }}>
+            <button className="primary-button" onClick={() => navigate('/onboarding')} style={{ width: '100%' }}>
               🔄 Re-hacer Test de Aprendizaje
             </button>
             <button 
               className="primary-button" 
-              style={{ backgroundColor: '#ef4444', border: 'none' }}
+              style={{ backgroundColor: '#ef4444', border: 'none', width: '100%' }}
               onClick={logout}
             >
               🚪 Cerrar Sesión
             </button>
           </div>
+        </div>
+
+        <div className="profile-info-card">
+          <div className="profile-avatar">📅</div>
+          <h2>Configuración del Ciclo Académico</h2>
+          <p style={{ color: '#56677a', fontSize: '0.9rem', marginBottom: '20px', textAlign: 'center' }}>
+            Ajusta la duración del semestre y la fecha de inicio del ciclo.
+          </p>
+
+          <form onSubmit={handleSaveProfile} style={{ width: '100%', textAlign: 'left' }}>
+            <div style={{ marginBottom: '16px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: '#475569' }}>
+                Semanas de Duración (1-52)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="52"
+                value={weeks}
+                onChange={(e) => {
+                  setWeeks(e.target.value)
+                  setErrorMsg('')
+                  setSuccessMsg('')
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: '0.9rem',
+                  color: '#1e293b'
+                }}
+              />
+            </div>
+
+            <div style={{ marginBottom: '20px' }}>
+              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: '600', marginBottom: '6px', color: '#475569' }}>
+                Fecha de Inicio
+              </label>
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => {
+                  setStartDate(e.target.value)
+                  setErrorMsg('')
+                  setSuccessMsg('')
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: '0.9rem',
+                  color: '#1e293b'
+                }}
+              />
+            </div>
+
+            {errorMsg && (
+              <div className="auth-error" style={{ marginBottom: '16px', fontSize: '0.85rem', textAlign: 'center' }}>
+                {errorMsg}
+              </div>
+            )}
+
+            {successMsg && (
+              <div style={{
+                background: '#def7ec',
+                color: '#03543f',
+                padding: '10px 12px',
+                borderRadius: '10px',
+                fontSize: '0.85rem',
+                fontWeight: '500',
+                marginBottom: '16px',
+                textAlign: 'center',
+                border: '1px solid #bdf2d5'
+              }}>
+                {successMsg}
+              </div>
+            )}
+
+            <button 
+              type="submit" 
+              className="primary-button primary-button--wide"
+              disabled={saving}
+              style={{ width: '100%' }}
+            >
+              {saving ? 'Guardando...' : 'Guardar Cambios'}
+            </button>
+          </form>
         </div>
       </div>
     </div>
@@ -505,9 +670,26 @@ function WeeklyView({ blocks }) {
 }
 
 // Vista Mensual
-function MonthlyView({ blocks }) {
-  const [currentDate, setCurrentDate] = useState(() => new Date(2026, 3, 13)) // Abril 2026 por defecto
-  const [selectedDay, setSelectedDay] = useState(13)
+function MonthlyView({ blocks, semesterStartDate, semesterWeeks }) {
+  const [currentDate, setCurrentDate] = useState(() => {
+    if (semesterStartDate) {
+      const parsed = new Date(semesterStartDate)
+      if (!isNaN(parsed.getTime())) {
+        return parsed
+      }
+    }
+    return new Date()
+  })
+  
+  const [selectedDay, setSelectedDay] = useState(() => {
+    if (semesterStartDate) {
+      const parsed = new Date(semesterStartDate)
+      if (!isNaN(parsed.getTime())) {
+        return parsed.getDate()
+      }
+    }
+    return new Date().getDate()
+  })
 
   const year = currentDate.getFullYear()
   const monthIndex = currentDate.getMonth()
@@ -517,6 +699,10 @@ function MonthlyView({ blocks }) {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ]
   const currentMonthName = monthNames[monthIndex]
+
+  const semesterRange = useMemo(() => {
+    return getSemesterRange(semesterStartDate, semesterWeeks)
+  }, [semesterStartDate, semesterWeeks])
 
   // Calcular días del mes actual dinámicamente
   const totalDays = new Date(year, monthIndex + 1, 0).getDate()
@@ -574,20 +760,31 @@ function MonthlyView({ blocks }) {
             <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
           </div>
           <div className="calendar-grid-body">
-            {calendarDays.map((day, idx) => (
-              <div 
-                key={idx} 
-                className={`calendar-day-cell ${day === null ? 'is-empty' : ''} ${day === selectedDay ? 'is-selected' : ''}`}
-                onClick={() => day !== null && setSelectedDay(day)}
-              >
-                {day && (
-                  <>
-                    <span className="day-number">{day}</span>
-                    {day % 2 === 0 && <span className="day-indicator" />}
-                  </>
-                )}
-              </div>
-            ))}
+            {calendarDays.map((day, idx) => {
+              if (day === null) {
+                return (
+                  <div key={idx} className="calendar-day-cell is-empty" />
+                )
+              }
+              const dateOfCell = new Date(year, monthIndex, day)
+              const withinSemester = isDateWithinSemester(dateOfCell, semesterRange)
+              const isSelected = day === selectedDay
+
+              return (
+                <div 
+                  key={idx} 
+                  className={`calendar-day-cell ${isSelected ? 'is-selected' : ''} ${!withinSemester ? 'is-outside-semester' : ''}`}
+                  onClick={() => {
+                    if (withinSemester) {
+                      setSelectedDay(day)
+                    }
+                  }}
+                  title={!withinSemester ? 'Fuera del rango de tu ciclo académico' : undefined}
+                >
+                  <span className="day-number">{day}</span>
+                </div>
+              )
+            })}
           </div>
         </div>
 
@@ -826,7 +1023,11 @@ export default function CalendarPage({
                   )}
 
                   {currentMode === 'month' && (
-                    <MonthlyView blocks={activeBlocks} />
+                    <MonthlyView 
+                      blocks={activeBlocks} 
+                      semesterStartDate={user?.semesterStartDate}
+                      semesterWeeks={user?.semesterWeeks}
+                    />
                   )}
 
                   <div className="cal-info-green-mobile">
