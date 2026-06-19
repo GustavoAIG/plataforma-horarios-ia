@@ -613,6 +613,8 @@ function MonthlyView({ parsedTable }) {
   )
 }
 
+// Este componente maneja la página del calendario inteligente, organizando el horario del estudiante
+// (clases, estudio y descansos) y proporcionando acceso a las secciones de tareas, bienestar y perfil.
 export default function CalendarPage({
   mode,
   plan,
