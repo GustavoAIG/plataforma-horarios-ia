@@ -49,7 +49,11 @@ app.use('/api/courses', courseRoutes)
 app.use('/api/schedule', scheduleRoutes)
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }))
 
-// Conectar DB y levantar servidor
-connectDB().then(() =>
-  app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`))
-)
+// Conectar DB y levantar servidor (solo en ejecución real, no en tests)
+if (process.env.NODE_ENV !== 'test') {
+  connectDB().then(() =>
+    app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`))
+  )
+}
+
+export default app

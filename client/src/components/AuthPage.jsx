@@ -51,16 +51,6 @@ export default function AuthPage({ onLogin, onBack }) {
     try {
       setError('')
 
-      console.log({
-        email,
-        password,
-        isRegister: mode === 'signup',
-        name,
-        lastName1,
-        lastName2,
-        university,
-        career,
-      })
 
       await onLogin({
         email,

@@ -165,7 +165,30 @@ function App() {
 
           <main className="shell-main shell-main--page">
             <div className="page-content">
-              {view === 'calendar' && <CalendarPage user={user} selectedCourses={selectedCourses} />}
+              {view === 'calendar' && (
+                <CalendarPage 
+                  user={user} 
+                  selectedCourses={selectedCourses}
+                  plan={{
+                    title: 'Mi Horario',
+                    date: new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
+                    summary: `Tienes ${selectedCourses.length} cursos seleccionados`,
+                    highlights: selectedCourses.slice(0, 3),
+                    schedule: selectedCourses.map(course => [course, '08:00 - 10:00', 'Aula 101', 'Activo']),
+                    courses: selectedCourses,
+                    reminders: []
+                  }}
+                  mode="month"
+                  onChangeMode={() => {}}
+                  onAdjustSchedule={() => {}}
+                  onSelectCourse={() => {}}
+                  selectedCourse={null}
+                  onSelectReminder={() => {}}
+                  selectedReminder={null}
+                  preference={{}}
+                  onNavigate={() => {}}
+                />
+              )}
               {/* Aquí renderizarías el resto de páginas: TasksPage, WellnessPage, etc. */}
             </div>
           </main>
