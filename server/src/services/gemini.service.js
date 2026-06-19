@@ -4,8 +4,11 @@ dotenv.config()
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
-
-const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+// IMPORTANTE: este proyecto/API key tiene la serie gemini-1.5 deprecada/en
+// retiro (confirmado en el historial del proyecto). NO cambiar el default
+// a gemini-1.5-flash o las llamadas fallarán silenciosamente con error
+// de modelo no disponible, agotando los reintentos.
+const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-2.5-flash'
 
 const scheduleResponseSchema = {
   type: SchemaType.OBJECT,
