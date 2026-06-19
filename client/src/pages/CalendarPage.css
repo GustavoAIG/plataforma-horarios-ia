@@ -1172,3 +1172,23 @@
     width: 100%;
   }
 }
+
+.calendar-day-cell.is-outside-semester {
+  background: transparent;
+  color: var(--cal-text-muted);
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.calendar-day-cell.is-outside-semester:hover {
+  background: transparent;
+}
+
+.profile-container-layout {
+  display: flex;
+  flex-direction: row;
+  gap: 24px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
