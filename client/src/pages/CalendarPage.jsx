@@ -457,6 +457,17 @@ function ProfileSection({ user }) {
     }
     return ''
   })
+
+  // Sync state with user prop changes
+  useEffect(() => {
+    if (user) {
+      setWeeks(user.semesterWeeks || 16)
+      if (user.semesterStartDate) {
+        setStartDate(new Date(user.semesterStartDate).toISOString().slice(0, 10))
+      }
+    }
+  }, [user])
+
   const [errorMsg, setErrorMsg] = useState('')
   const [successMsg, setSuccessMsg] = useState('')
   const [saving, setSaving] = useState(false)
@@ -728,10 +739,18 @@ function MonthlyView({ blocks, semesterStartDate, semesterWeeks }) {
   const selectedDayName = getDayOfWeekName(selectedDay)
   const selectedDayCapitalized = selectedDayName.charAt(0).toUpperCase() + selectedDayName.slice(1)
 
-  const selectedDayActivities = blocksForDay(blocks, selectedDayCapitalized).map((b) => ({
-    time: `${b.startTime} - ${b.endTime}`,
-    activity: b.activity,
-  }))
+  const isSelectedDateWithinSemester = useMemo(() => {
+    const selectedDate = new Date(year, monthIndex, selectedDay)
+    return isDateWithinSemester(selectedDate, semesterRange)
+  }, [year, monthIndex, selectedDay, semesterRange])
+
+  const selectedDayActivities = useMemo(() => {
+    if (!isSelectedDateWithinSemester) return []
+    return blocksForDay(blocks, selectedDayCapitalized).map((b) => ({
+      time: `${b.startTime} - ${b.endTime}`,
+      activity: b.activity,
+    }))
+  }, [isSelectedDateWithinSemester, blocks, selectedDayCapitalized])
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, monthIndex - 1, 1))
@@ -802,7 +821,11 @@ function MonthlyView({ blocks, semesterStartDate, semesterWeeks }) {
                 )
               })
             ) : (
-              <p className="no-activities">Día libre para descanso y actividades personales. 🏖️</p>
+              <p className="no-activities">
+                {!isSelectedDateWithinSemester
+                  ? 'Fuera del rango de tu ciclo académico 📅'
+                  : 'Día libre para descanso y actividades personales. 🏖️'}
+              </p>
             )}
           </div>
         </div>
@@ -834,6 +857,10 @@ export default function CalendarPage({
 
   // Estado para la sección activa de la barra lateral (calendar, tasks, wellness, profile)
   const [activeSection, setActiveSection] = useState('calendar')
+
+  const semesterRange = useMemo(() => {
+    return getSemesterRange(user?.semesterStartDate, user?.semesterWeeks)
+  }, [user?.semesterStartDate, user?.semesterWeeks])
 
   // Estado para almacenar el plan de estudio guardado en la base de datos
   const [dbPlan, setDbPlan] = useState(null)
@@ -906,6 +933,16 @@ export default function CalendarPage({
 
   // Generar actividades para el día de "Hoy" dinámicamente
   const todayActivities = useMemo(() => {
+    const todayDate = new Date()
+    todayDate.setHours(0, 0, 0, 0)
+    const isTodayWithin = isDateWithinSemester(todayDate, semesterRange)
+
+    if (!isTodayWithin) {
+      return [
+        { course: 'Ciclo académico finalizado', time: '—', priority: 'Descanso' }
+      ]
+    }
+
     const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
     const todayName = daysOfWeek[new Date().getDay()]
     const todays = blocksForDay(activeBlocks, todayName)
@@ -921,7 +958,7 @@ export default function CalendarPage({
     return [
       { course: 'Sin actividades hoy', time: '—', priority: 'Descanso' }
     ]
-  }, [activeBlocks])
+  }, [activeBlocks, semesterRange])
 
   const hasSchedule = todayActivities.length > 0
 
