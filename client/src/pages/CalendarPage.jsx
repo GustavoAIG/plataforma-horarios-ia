@@ -90,7 +90,7 @@ const SidebarLeft = memo(function SidebarLeft({ user, activeSection, onSectionCh
     <aside className="cal-sidebar-left">
       <div className="cal-brand-header">
         <h2>Stressless</h2>
-        <button className="cal-menu-btn"><Icons.Menu /></button>
+        <button className="cal-menu-btn" aria-label="Menú"><Icons.Menu /></button>
       </div>
 
       <nav className="cal-nav-list">
