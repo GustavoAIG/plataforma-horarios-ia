@@ -1371,6 +1371,21 @@ svg { display: block; }
     padding-right: 18px;
   }
 
+  .test-card,
+  .courses-card {
+    padding: 24px 16px;
+    min-height: auto;
+  }
+
+  .options-grid,
+  .course-grid,
+  .course-actions,
+  .settings-grid,
+  .calendar-banner__points,
+  .chip-row {
+    grid-template-columns: 1fr;
+  }
+
   .page-content {
     padding-top: 14px;
     padding-bottom: 18px;

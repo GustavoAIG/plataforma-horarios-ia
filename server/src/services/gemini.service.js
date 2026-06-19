@@ -71,8 +71,14 @@ RESPONDE EN ESPAÑOL con este formato exacto:
 export const extractCoursesFromMalla = async ({ fileBase64, mimeType }) => {
   const prompt = `Analiza el documento adjunto (malla curricular o plan de estudios).
 Extrae la lista de cursos que correspondan al ciclo actual o las asignaturas mencionadas en el documento.
+
+REGLAS DE CICLO:
+- Si el documento contiene múltiples ciclos o semestres (por ejemplo, Ciclo I, Ciclo II, etc.), intenta identificar si se especifica un ciclo actual o semestre de interés (por ejemplo, con menciones como "Ciclo V", cursos marcados, o si el archivo está enfocado en un solo ciclo).
+- Si no se especifica de manera clara un ciclo actual pero el documento se divide por ciclos, extrae únicamente las asignaturas del primer ciclo mencionado o el que parezca ser el objeto de estudio principal.
+- Si solo hay una lista de asignaturas individuales sin división clara de ciclos, extrae todas las asignaturas de la lista.
+
 Para cada curso detectado, extrae o infiere los siguientes campos en formato JSON:
-- name: El nombre completo del curso.
+- name: El nombre completo del curso (ej: "Matemáticas III").
 - code: El código del curso (por ejemplo, MAT101 o ALG301). Si no está disponible, créalo usando las primeras letras del nombre del curso en mayúsculas.
 - credits: La cantidad de créditos del curso (un número entero). Si no se indica, asume 3.
 
@@ -82,18 +88,35 @@ Responde únicamente con un array en formato JSON puro, sin decoraciones de mark
   {"name": "Ingeniería de Requisitos", "code": "REQ202", "credits": 3}
 ]`;
 
-  const result = await model.generateContent([
-    {
-      inlineData: {
-        data: fileBase64,
-        mimeType: mimeType
-      }
-    },
-    { text: prompt }
-  ]);
+  let result;
+  if (mimeType && (mimeType.startsWith('text/') || mimeType === 'application/octet-stream')) {
+    // Decodificar Base64 de archivos TXT y pasarlo como texto plano para evitar problemas de inlineData con text/plain
+    const textContent = Buffer.from(fileBase64, 'base64').toString('utf-8');
+    result = await model.generateContent([
+      `CONTENIDO DEL DOCUMENTO DE MALLA CURRICULAR:\n---\n${textContent}\n---\n\n${prompt}`
+    ]);
+  } else {
+    result = await model.generateContent([
+      {
+        inlineData: {
+          data: fileBase64,
+          mimeType: mimeType
+        }
+      },
+      { text: prompt }
+    ]);
+  }
 
   const responseText = result.response.text().trim();
-  // Limpiar bloques de código markdown de la respuesta si la IA los incluye
-  const cleanJson = responseText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
-  return JSON.parse(cleanJson);
+  
+  // Extraer el bloque JSON de manera robusta usando expresiones regulares
+  const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
+  const cleanJson = jsonMatch ? jsonMatch[0] : responseText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+  
+  try {
+    return JSON.parse(cleanJson);
+  } catch (err) {
+    console.error('Error al parsear el JSON de cursos extraídos. Respuesta original de Gemini:', responseText);
+    throw new Error('La respuesta de la IA no tiene el formato JSON esperado.');
+  }
 }

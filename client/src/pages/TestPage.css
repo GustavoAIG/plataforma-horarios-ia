@@ -506,3 +506,16 @@
   gap: 12px;
   margin-top: 8px;
 }
+
+/* Overrides de responsividad al final para evitar problemas de cascada */
+@media (max-width: 680px) {
+  .course-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .course-actions {
+    grid-template-columns: 1fr !important;
+  }
+  .courses-card {
+    padding: 24px 16px !important;
+  }
+}

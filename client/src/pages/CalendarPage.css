@@ -398,7 +398,17 @@
   }
 
   .cal-tabs {
-    display: none; /* Según diseño movil no hay tabs visibles arriba */
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 8px;
+  }
+
+  .cal-tab-btn {
+    flex: 1;
+    text-align: center;
+    padding: 8px 12px;
+    font-size: 0.85rem;
   }
 
   .cal-banner-features {
@@ -506,11 +516,7 @@
   margin-top: 24px;
 }
 
-@media (max-width: 768px) {
-  .tasks-container-layout {
-    grid-template-columns: 1fr;
-  }
-}
+
 
 .task-form-card,
 .tasks-list-card,
@@ -566,6 +572,32 @@
 
 .primary-button:hover {
   opacity: 0.9;
+}
+
+.wellness-primary-btn {
+  background: var(--cal-sidebar);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 14px 24px;
+  font-weight: 700;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  width: 100%;
+}
+
+.wellness-primary-btn:hover {
+  background: #3b4d61;
+}
+
+.wellness-primary-btn.is-active {
+  background: #ef4444;
+}
+
+.wellness-primary-btn.is-active:hover {
+  background: #dc2626;
 }
 
 .primary-button--wide {
@@ -650,11 +682,7 @@
   margin-top: 24px;
 }
 
-@media (max-width: 768px) {
-  .wellness-grid-layout {
-    grid-template-columns: 1fr;
-  }
-}
+
 
 .stress-gauge-container {
   margin: 20px 0;
@@ -854,11 +882,7 @@
   }
 }
 
-@media (max-width: 768px) {
-  .weekly-grid-container {
-    grid-template-columns: 1fr;
-  }
-}
+
 
 .weekly-day-card {
   background: #ffffff;
@@ -1075,4 +1099,59 @@
   color: var(--cal-text);
   min-width: 140px;
   text-align: center;
+}
+
+/* ==========================================
+   Adaptaciones Responsivas y Ajustes de Grid
+   ========================================== */
+.burnout-tips-card,
+.ai-recommendations-card {
+  grid-column: span 2;
+}
+
+@media (max-width: 768px) {
+  .tasks-container-layout,
+  .wellness-grid-layout,
+  .weekly-grid-container {
+    grid-template-columns: 1fr !important;
+  }
+
+  .burnout-tips-card,
+  .ai-recommendations-card {
+    grid-column: span 1 !important;
+  }
+  
+  .ai-recommendations-card {
+    margin-top: 0 !important;
+  }
+
+  .monthly-header-row {
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    text-align: center;
+  }
+
+  .month-navigation-controls {
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .monthly-grid-card {
+    padding: 12px;
+  }
+
+  .calendar-grid-body {
+    gap: 4px;
+  }
+
+  .calendar-day-cell {
+    font-size: 0.8rem;
+    border-radius: 8px;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+  }
 }

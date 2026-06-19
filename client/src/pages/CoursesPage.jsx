@@ -47,10 +47,21 @@ export default function CoursesPage() {
     reader.readAsDataURL(selectedFile)
     reader.onload = async () => {
       try {
+        let mimeType = selectedFile.type
+        if (!mimeType) {
+          if (selectedFile.name.toLowerCase().endsWith('.txt')) {
+            mimeType = 'text/plain'
+          } else if (selectedFile.name.toLowerCase().endsWith('.pdf')) {
+            mimeType = 'application/pdf'
+          } else {
+            mimeType = 'application/pdf'
+          }
+        }
+
         const base64Data = reader.result.split(',')[1]
         const response = await api.post('/courses/analyze-malla', {
           fileBase64: base64Data,
-          mimeType: selectedFile.type || 'application/pdf'
+          mimeType: mimeType
         })
         
         if (response.data && response.data.courses) {
@@ -112,10 +123,39 @@ export default function CoursesPage() {
     setLoading(true)
     setError('')
     try {
-      await api.post('/auth/learning-answers', {
+      // 1. Obtener los objetos de curso seleccionados
+      const selectedCoursesData = courses
+        .filter(c => selected.includes(c.name))
+        .map(c => ({
+          name: c.name,
+          code: c.code || '',
+          credits: c.credits || 3
+        }))
+
+      // 2. Guardar las respuestas del test y los cursos en MongoDB
+      const saveResponse = await api.post('/auth/learning-answers', {
         answers: state?.answers || [],
-        courses: selected,
+        courses: selectedCoursesData,
       })
+
+      // Extraer los cursos guardados en la BD con su ID
+      const savedCoursesFromDb = saveResponse.data.courses || []
+      const courseIds = savedCoursesFromDb.map(c => c._id)
+
+      // 3. Generar el horario de estudio con Gemini
+      let generatedScheduleData = null
+      if (courseIds.length > 0) {
+        try {
+          const scheduleResponse = await api.post('/schedule/generate', {
+            courseIds,
+            preference: 'balanced',
+            learningAnswers: state?.answers || []
+          })
+          generatedScheduleData = scheduleResponse.data
+        } catch (scheduleErr) {
+          console.error('Error al generar el horario con Gemini:', scheduleErr)
+        }
+      }
 
       // Marcar onboarding como completo
       await api.patch('/user/complete-onboarding')
@@ -128,7 +168,14 @@ export default function CoursesPage() {
       // Pasar los cursos al calendario mediante el estado de navegación
       navigate('/app/calendar', { 
         replace: true,
-        state: {
+        state: generatedScheduleData ? {
+          generatedPlan: {
+            isAiGenerated: true,
+            rawMarkdown: generatedScheduleData.aiPlan,
+            courses: savedCoursesFromDb,
+            schedule: []
+          }
+        } : {
           generatedPlan: {
             courses: selected,
             schedule: selected.map((course, idx) => ({
@@ -140,6 +187,7 @@ export default function CoursesPage() {
         }
       })
     } catch (err) {
+      console.error('Error en el flujo de generación:', err)
       setError('Error al guardar tu configuración. Intenta de nuevo.')
     } finally {
       setLoading(false)

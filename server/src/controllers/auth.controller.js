@@ -1,4 +1,6 @@
 import userRepository from '../repositories/user.repository.js'
+import courseRepository from '../repositories/course.repository.js'
+import Course from '../models/Course.model.js'
 import { generateToken } from '../utils/generateToken.js'
 import { logAction } from '../utils/audit.js'
 
@@ -219,12 +221,44 @@ export const saveLearningAnswers = async (req, res) => {
     if (answers && Array.isArray(answers)) {
       updateData.learningAnswers = answers
     }
+
+    const savedCourses = []
     if (courses && Array.isArray(courses)) {
-      updateData.onboardingCourses = courses
+      // 1. Guardar nombres en onboardingCourses
+      const courseNames = courses.map(c => typeof c === 'object' ? c.name : c)
+      updateData.onboardingCourses = courseNames
+
+      // 2. Crear o encontrar los cursos en MongoDB
+      for (const c of courses) {
+        const name = typeof c === 'object' ? c.name : c
+        const code = typeof c === 'object' ? c.code : ''
+        const credits = typeof c === 'object' ? c.credits : 3
+
+        let existing = await Course.findOne({ user: req.user._id, Name_Course: name })
+        if (!existing) {
+          existing = await courseRepository.create({
+            user: req.user._id,
+            Name_Course: name,
+            Hours_Course: credits ? Math.round(credits * 1.5) : 3,
+            Priority_Level_Course: 3,
+            Teacher_Course: '',
+            Times_A_Week_Course: 2,
+            code: code,
+          })
+        }
+        savedCourses.push(existing)
+      }
+
+      // Actualizar contador del usuario
+      updateData.Courses_User = savedCourses.length
     }
     
     const user = await userRepository.updateById(req.user._id, updateData)
-    res.json(user)
+    
+    res.json({
+      user,
+      courses: savedCourses
+    })
   } catch (e) {
     res.status(500).json({ message: e.message })
   }

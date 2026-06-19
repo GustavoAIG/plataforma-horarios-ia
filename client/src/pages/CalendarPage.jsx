@@ -271,7 +271,7 @@ function TasksSection({ rawMarkdown }) {
           </div>
         </div>
 
-        <div className="task-form-card" style={{ gridColumn: 'span 2', marginTop: '12px' }}>
+        <div className="task-form-card ai-recommendations-card">
           <h3>💡 Recomendaciones de Organización por IA</h3>
           <ul className="burnout-tips-list" style={{ listStyleType: 'none', paddingLeft: 0 }}>
             {recommendationItems.map((rec, idx) => (
@@ -392,14 +392,14 @@ function WellnessSection({ rawMarkdown }) {
           </div>
           <div className="breathing-helper-text">{breathingText}</div>
           <button 
-            className={`primary-button ${isBreathing ? 'secondary-button' : ''}`} 
+            className={`wellness-primary-btn ${isBreathing ? 'is-active' : ''}`} 
             onClick={handleStartBreathing}
           >
             {isBreathing ? 'Detener Ejercicio' : 'Iniciar Respiración'}
           </button>
         </div>
 
-        <div className="wellness-card burnout-tips-card" style={{ gridColumn: 'span 2' }}>
+        <div className="wellness-card burnout-tips-card">
           <h3>🧘 Estrategia de Bienestar Personalizada (IA)</h3>
           <ul className="burnout-tips-list">
             {strategyItems.map((tip, idx) => (
@@ -613,8 +613,6 @@ function MonthlyView({ parsedTable }) {
   )
 }
 
-// Este componente maneja la página del calendario inteligente, organizando el horario del estudiante
-// (clases, estudio y descansos) y proporcionando acceso a las secciones de tareas, bienestar y perfil.
 export default function CalendarPage({
   mode,
   plan,

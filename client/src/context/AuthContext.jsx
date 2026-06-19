@@ -132,9 +132,10 @@ export function AuthProvider({
         
       } catch (error) {
         console.error('Session verification failed:', error)
-        
         if (isMounted) {
-          logout()
+          localStorage.removeItem('token')
+          setUser(null)
+          setIsAuthenticated(false)
         }
       } finally {
         if (isMounted) {
@@ -148,7 +149,6 @@ export function AuthProvider({
     return () => {
       isMounted = false
     }
-    // Usamos una función anónima para ejecutar logout de forma segura sin causar bucles en las dependencias
   }, [])
 
   /**
