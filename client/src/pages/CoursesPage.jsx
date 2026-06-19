@@ -37,6 +37,23 @@ export default function CoursesPage() {
   const [selectedFile, setSelectedFile]     = useState(null)
   const [isAnalyzing, setIsAnalyzing]       = useState(false)
   const [detectedCourses, setDetectedCourses] = useState([])
+  const [semesterWeeks, setSemesterWeeks] = useState(16)
+  const [semesterStartDate, setSemesterStartDate] = useState(() => new Date().toISOString().slice(0, 10))
+  const [semesterError, setSemesterError] = useState('')
+
+  function validateSemesterFields() {
+    setSemesterError('')
+    const weeks = Number(semesterWeeks)
+    if (!semesterWeeks || !Number.isInteger(weeks) || weeks < 1 || weeks > 52) {
+      setSemesterError('La duración del semestre debe ser un número entero entre 1 y 52 semanas.')
+      return false
+    }
+    if (!semesterStartDate) {
+      setSemesterError('Debes seleccionar una fecha de inicio para tu semestre académico.')
+      return false
+    }
+    return true
+  }
 
   // Convierte el archivo a base64 y envía la solicitud al backend para extraer los cursos usando la IA de Gemini
   function handleAnalyzeMalla() {
@@ -120,6 +137,7 @@ export default function CoursesPage() {
 
   async function handleGenerate() {
     if (selected.length === 0) return
+    if (!validateSemesterFields()) return
     setLoading(true)
     setError('')
     try {
@@ -158,11 +176,18 @@ export default function CoursesPage() {
       }
 
       // Marcar onboarding como completo
-      await api.patch('/user/complete-onboarding')
+      await api.patch('/user/complete-onboarding', {
+        semesterWeeks: parseInt(semesterWeeks, 10),
+        semesterStartDate
+      })
       
       // Actualizar el estado global del usuario para que el Router nos deje entrar al Calendario
       if (updateUser) {
-        updateUser({ hasCompletedOnboarding: true })
+        updateUser({
+          hasCompletedOnboarding: true,
+          semesterWeeks: parseInt(semesterWeeks, 10),
+          semesterStartDate
+        })
       }
 
       // Pasar los cursos al calendario mediante el estado de navegación
@@ -251,6 +276,77 @@ export default function CoursesPage() {
           <button className="btn-lavender" type="button" onClick={() => setShowMallaModal(true)}>
             + Importar Malla Curricular
           </button>
+        </div>
+
+        <div className="semester-config-card" style={{
+          background: '#f8fafc',
+          borderRadius: '16px',
+          padding: '20px',
+          marginBottom: '20px',
+          border: '1px solid #e2e8f0',
+          textAlign: 'left'
+        }}>
+          <h3 style={{ margin: '0 0 8px 0', fontSize: '1.05rem', color: '#1e293b', fontWeight: 'bold' }}>
+            📅 Duración de tu Ciclo Académico
+          </h3>
+          <p style={{ margin: '0 0 16px 0', fontSize: '0.85rem', color: '#64748b' }}>
+            Configura las semanas de duración y la fecha de inicio para acotar la proyección de tu calendario.
+          </p>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '6px', color: '#475569' }}>
+                Semanas de Duración (1-52)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="52"
+                value={semesterWeeks}
+                onChange={(e) => {
+                  setSemesterWeeks(e.target.value);
+                  setSemesterError('');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: '0.9rem',
+                  color: '#1e293b'
+                }}
+              />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: '600', marginBottom: '6px', color: '#475569' }}>
+                Fecha de Inicio
+              </label>
+              <input
+                type="date"
+                value={semesterStartDate}
+                onChange={(e) => {
+                  setSemesterStartDate(e.target.value);
+                  setSemesterError('');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  border: '1px solid #cbd5e1',
+                  background: '#ffffff',
+                  fontSize: '0.9rem',
+                  color: '#1e293b'
+                }}
+              />
+            </div>
+          </div>
+          
+          {semesterError && (
+            <div className="auth-error" style={{ marginTop: '12px', marginBottom: 0 }}>
+              {semesterError}
+            </div>
+          )}
         </div>
 
         <button
