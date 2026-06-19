@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import api from '../api/axios'
@@ -40,6 +40,37 @@ export default function CoursesPage() {
   const [semesterWeeks, setSemesterWeeks] = useState(16)
   const [semesterStartDate, setSemesterStartDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [semesterError, setSemesterError] = useState('')
+
+  useEffect(() => {
+    async function fetchUserCourses() {
+      try {
+        const response = await api.get('/courses')
+        if (response.data && Array.isArray(response.data)) {
+          const dbCourses = response.data.map(c => ({
+            name: c.Name_Course,
+            code: c.code || '',
+            credits: c.Hours_Course ? Math.round(c.Hours_Course / 1.5) : 3
+          }))
+          
+          if (dbCourses.length > 0) {
+            setCourses(prev => {
+              const existingNames = prev.map(c => c.name)
+              const newCourses = dbCourses.filter(c => !existingNames.includes(c.name))
+              return [...prev, ...newCourses]
+            })
+            setSelected(prev => {
+              const dbNames = dbCourses.map(c => c.name)
+              const combined = new Set([...prev, ...dbNames])
+              return Array.from(combined)
+            })
+          }
+        }
+      } catch (err) {
+        console.error('Error al obtener los cursos guardados:', err)
+      }
+    }
+    fetchUserCourses()
+  }, [])
 
   function validateSemesterFields() {
     setSemesterError('')
