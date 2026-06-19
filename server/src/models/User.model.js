@@ -17,6 +17,9 @@ const userSchema = new mongoose.Schema({
   learningAnswers:      { type: [String], default: [] },
   hasCompletedOnboarding: { type: Boolean, default: false },  // ← agregar
   onboardingCourses:    { type: [String], default: [] },      // ← agregar
+  // Window of calendar projection for the student
+  semesterWeeks:        { type: Number, default: 16, min: 1, max: 52 },
+  semesterStartDate:    { type: Date, default: null },
 }, { timestamps: true, collection: 'users' })
 
 // ← El problema estaba aquí, async/await en vez de callback
