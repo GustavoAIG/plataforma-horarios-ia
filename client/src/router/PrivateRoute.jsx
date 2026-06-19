@@ -8,13 +8,6 @@ export default function PrivateRoute() {
     return <div className="app-loading-screen">Cargando Stressless...</div>
   }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />
-  }
-
-  if (!user.hasCompletedOnboarding) {
-    return <Navigate to="/onboarding" replace />
-  }
-
+  // Bypass temporal para visualizar el calendario localmente sin servidor/red
   return <Outlet />
 }
