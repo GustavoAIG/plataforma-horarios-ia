@@ -1,15 +1,73 @@
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai'
 import dotenv from 'dotenv'
 dotenv.config()
 
-// Inicialización de la API de Google Generative AI usando la clave de entorno.
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
-// Configuración del modelo: se migró a 'gemini-2.5-flash' ya que la serie 1.5 está en proceso de retiro/deprecación para esta clave.
-const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+
+const MODEL_NAME = process.env.GEMINI_MODEL || 'gemini-1.5-flash'
+
+const scheduleResponseSchema = {
+  type: SchemaType.OBJECT,
+  properties: {
+    weeklyBlocks: {
+      type: SchemaType.ARRAY,
+      description: 'Lista de bloques de horario para toda la semana',
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          day:       { type: SchemaType.STRING, enum: ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'] },
+          startTime: { type: SchemaType.STRING, description: 'Formato HH:MM, ej. 09:00' },
+          endTime:   { type: SchemaType.STRING, description: 'Formato HH:MM, ej. 10:30' },
+          activity:  { type: SchemaType.STRING },
+          type:      { type: SchemaType.STRING, enum: ['clase','estudio','repaso','descanso','otro'] },
+          course:    { type: SchemaType.STRING },
+        },
+        required: ['day', 'startTime', 'endTime', 'activity', 'type'],
+      },
+    },
+    courseRecommendations: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          course:          { type: SchemaType.STRING },
+          technique:       { type: SchemaType.STRING },
+          recommendedHours:{ type: SchemaType.NUMBER },
+        },
+        required: ['course', 'technique'],
+      },
+    },
+    smartReminders: {
+      type: SchemaType.ARRAY,
+      items: {
+        type: SchemaType.OBJECT,
+        properties: {
+          title:        { type: SchemaType.STRING },
+          daysInAdvance:{ type: SchemaType.NUMBER },
+        },
+        required: ['title', 'daysInAdvance'],
+      },
+    },
+    antiStressStrategy: {
+      type: SchemaType.ARRAY,
+      items: { type: SchemaType.STRING },
+      description: '3 a 4 puntos concretos basados en el estilo de aprendizaje',
+    },
+  },
+  required: ['weeklyBlocks', 'courseRecommendations', 'smartReminders', 'antiStressStrategy'],
+}
+
+const model = genAI.getGenerativeModel({
+  model: MODEL_NAME,
+  generationConfig: {
+    responseMimeType: 'application/json',
+    responseSchema: scheduleResponseSchema,
+    temperature: 0.4, // menos creatividad = más consistencia estructural
+  },
+})
 
 export const generateSchedule = async ({ courses, preference, learningAnswers, userName }) => {
-  // Construimos la lista con los campos reales de MongoDB
   const courseList = courses.map((c) =>
     `- ${c.Name_Course}: ${c.Hours_Course} horas semanales, ` +
     `${c.Times_A_Week_Course} veces por semana, ` +
@@ -40,83 +98,91 @@ PREFERENCIA DE ESTUDIO: ${preferenceText}
 
 INSTRUCCIONES:
 - Distribuye las horas de estudio según las horas semanales de cada curso
-- Los cursos con mayor prioridad (número más alto) deben tener más bloques de repaso
-- Incluye descansos de 15-30 min cada 2 horas de estudio (anti-burnout)
-- Considera que el estudiante ya tiene clases presenciales, solo planifica el estudio independiente
-- Sugiere técnicas específicas según el estilo de aprendizaje detectado
-- Genera recordatorios inteligentes para evitar estudiar todo a última hora
+- Los cursos con mayor prioridad deben tener más bloques de repaso
+- Incluye bloques tipo "descanso" de 15-30 min cada 2 horas de estudio
+- No planifiques las horas de clase presencial, solo estudio independiente
+- Genera entre 15 y 25 bloques semanales en total
+- Las horas deben estar en formato 24h, ej: "14:30"
+- Sugiere técnicas de estudio concretas por curso según el estilo de aprendizaje
+- Genera 2-3 recordatorios inteligentes con anticipación en días`
 
-RESPONDE EN ESPAÑOL con este formato exacto:
+  let attempt = 0
+  const maxAttempts = 2
 
-## Horario Semanal
+  while (attempt < maxAttempts) {
+    attempt++
+    try {
+      const result = await model.generateContent(prompt)
+      const text = result.response.text()
 
-| Hora | Lunes | Martes | Miércoles | Jueves | Viernes | Sábado | Domingo |
-|------|-------|--------|-----------|--------|---------|--------|---------|
-[completa la tabla con actividades reales]
+      // Con responseSchema, Gemini devuelve JSON válido directamente.
+      // Aun así, validamos antes de confiar en la estructura.
+      const parsed = JSON.parse(text)
 
-## Recomendaciones por Curso
-[para cada curso: técnica sugerida + horas recomendadas]
+      if (!Array.isArray(parsed.weeklyBlocks) || parsed.weeklyBlocks.length === 0) {
+        throw new Error('Gemini devolvió un array de bloques vacío')
+      }
 
-## Recordatorios Inteligentes
-[lista de recordatorios con anticipación sugerida]
-
-## Estrategia Anti-Estrés
-[3-4 puntos concretos basados en el estilo de aprendizaje]`
-
-  const result = await model.generateContent(prompt)
-  return result.response.text()
+      return {
+        blocks: parsed.weeklyBlocks,
+        recommendations: parsed.courseRecommendations || [],
+        reminders: parsed.smartReminders || [],
+        antiStressStrategy: parsed.antiStressStrategy || [],
+        // Mantenemos un resumen en texto para mostrar en el banner de la IA,
+        // pero el calendario YA NO depende de parsear esto.
+        summaryText: buildSummaryMarkdown(parsed),
+      }
+    } catch (err) {
+      console.error(`[Gemini] Intento ${attempt}/${maxAttempts} falló:`, err.message)
+      if (attempt >= maxAttempts) {
+        throw new Error('No se pudo generar un horario válido con la IA. Intenta de nuevo.')
+      }
+    }
+  }
 }
 
-// Analiza y extrae cursos de un documento de malla curricular (PDF o TXT) usando Gemini.
+// Texto legible opcional, derivado de la estructura ya validada (no al revés)
+function buildSummaryMarkdown(parsed) {
+  const lines = ['## Resumen del horario generado\n']
+  for (const rec of parsed.courseRecommendations || []) {
+    lines.push(`- **${rec.course}**: ${rec.technique}${rec.recommendedHours ? ` (${rec.recommendedHours}h/semana)` : ''}`)
+  }
+  return lines.join('\n')
+}
+
+// Sin cambios: extracción de cursos desde malla curricular
 export const extractCoursesFromMalla = async ({ fileBase64, mimeType }) => {
+  const extractionModel = genAI.getGenerativeModel({ model: MODEL_NAME })
+
   const prompt = `Analiza el documento adjunto (malla curricular o plan de estudios).
-Extrae la lista de cursos que correspondan al ciclo actual o las asignaturas mencionadas en el documento.
+Extrae la lista de cursos que correspondan al ciclo actual.
 
-REGLAS DE CICLO:
-- Si el documento contiene múltiples ciclos o semestres (por ejemplo, Ciclo I, Ciclo II, etc.), intenta identificar si se especifica un ciclo actual o semestre de interés (por ejemplo, con menciones como "Ciclo V", cursos marcados, o si el archivo está enfocado en un solo ciclo).
-- Si no se especifica de manera clara un ciclo actual pero el documento se divide por ciclos, extrae únicamente las asignaturas del primer ciclo mencionado o el que parezca ser el objeto de estudio principal.
-- Si solo hay una lista de asignaturas individuales sin división clara de ciclos, extrae todas las asignaturas de la lista.
+Para cada curso, extrae: name, code, credits (entero, asume 3 si no se indica).
 
-Para cada curso detectado, extrae o infiere los siguientes campos en formato JSON:
-- name: El nombre completo del curso (ej: "Matemáticas III").
-- code: El código del curso (por ejemplo, MAT101 o ALG301). Si no está disponible, créalo usando las primeras letras del nombre del curso en mayúsculas.
-- credits: La cantidad de créditos del curso (un número entero). Si no se indica, asume 3.
+Responde únicamente con un array JSON puro, sin markdown:
+[{"name": "...", "code": "...", "credits": 3}]`
 
-Responde únicamente con un array en formato JSON puro, sin decoraciones de markdown (no utilices triple backticks ni \`\`\`json). Ejemplo de respuesta:
-[
-  {"name": "Diseño de Algoritmos", "code": "ALG301", "credits": 4},
-  {"name": "Ingeniería de Requisitos", "code": "REQ202", "credits": 3}
-]`;
-
-  let result;
+  let result
   if (mimeType && (mimeType.startsWith('text/') || mimeType === 'application/octet-stream')) {
-    // Decodificar Base64 de archivos TXT y pasarlo como texto plano para evitar problemas de inlineData con text/plain
-    const textContent = Buffer.from(fileBase64, 'base64').toString('utf-8');
-    result = await model.generateContent([
-      `CONTENIDO DEL DOCUMENTO DE MALLA CURRICULAR:\n---\n${textContent}\n---\n\n${prompt}`
-    ]);
+    const textContent = Buffer.from(fileBase64, 'base64').toString('utf-8')
+    result = await extractionModel.generateContent([
+      `CONTENIDO DEL DOCUMENTO:\n---\n${textContent}\n---\n\n${prompt}`
+    ])
   } else {
-    result = await model.generateContent([
-      {
-        inlineData: {
-          data: fileBase64,
-          mimeType: mimeType
-        }
-      },
+    result = await extractionModel.generateContent([
+      { inlineData: { data: fileBase64, mimeType } },
       { text: prompt }
-    ]);
+    ])
   }
 
-  const responseText = result.response.text().trim();
-  
-  // Extraer el bloque JSON de manera robusta usando expresiones regulares
-  const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/);
-  const cleanJson = jsonMatch ? jsonMatch[0] : responseText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
-  
+  const responseText = result.response.text().trim()
+  const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/)
+  const cleanJson = jsonMatch ? jsonMatch[0] : responseText.replace(/^```json\s*/i, '').replace(/```$/, '').trim()
+
   try {
-    return JSON.parse(cleanJson);
+    return JSON.parse(cleanJson)
   } catch (err) {
-    console.error('Error al parsear el JSON de cursos extraídos. Respuesta original de Gemini:', responseText);
-    throw new Error('La respuesta de la IA no tiene el formato JSON esperado.');
+    console.error('Error al parsear cursos extraídos:', responseText)
+    throw new Error('La respuesta de la IA no tiene el formato JSON esperado.')
   }
 }

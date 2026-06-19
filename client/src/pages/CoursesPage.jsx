@@ -171,9 +171,10 @@ export default function CoursesPage() {
         state: generatedScheduleData ? {
           generatedPlan: {
             isAiGenerated: true,
-            rawMarkdown: generatedScheduleData.aiPlan,
+            rawMarkdown: generatedScheduleData.schedule?.aiPlan || '',
             courses: savedCoursesFromDb,
-            schedule: []
+            schedule: [],
+            blocks: generatedScheduleData.blocks || generatedScheduleData.schedule?.blocks || []
           }
         } : {
           generatedPlan: {

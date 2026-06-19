@@ -1155,3 +1155,20 @@
     word-wrap: break-word;
   }
 }
+
+@media (max-width: 480px) {
+  .month-navigation-controls {
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+    align-items: stretch;
+  }
+  .btn-month-nav {
+    width: 100%;
+    text-align: center;
+  }
+  .current-month-display {
+    min-width: unset;
+    width: 100%;
+  }
+}

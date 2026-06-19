@@ -24,6 +24,14 @@ const Icons = {
   Lightbulb: () => <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18h6"/><path d="M10 22h4"/><path d="M15.09 14c.18-.98.65-1.74 1.41-2.5A6 6 0 1 0 7.5 11.5c.76.76 1.23 1.52 1.41 2.5"/></svg>
 }
 
+const DAYS_ORDER = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+
+function blocksForDay(blocks, dayName) {
+  return (blocks || [])
+    .filter((b) => b.day === dayName)
+    .sort((a, b) => a.startTime.localeCompare(b.startTime))
+}
+
 // Función auxiliar para parsear tablas Markdown
 function parseMarkdownTable(markdown) {
   if (!markdown) return null
@@ -466,32 +474,25 @@ function ProfileSection({ user }) {
 }
 
 // Vista Semanal
-function WeeklyView({ parsedTable }) {
-  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
-  
+function WeeklyView({ blocks }) {
   return (
     <div className="weekly-grid-container fade-in">
-      {days.map(day => {
-        const dayLower = day.toLowerCase()
-        const activities = parsedTable?.rows.map(row => ({
-          time: row['hora'] || '',
-          activity: row[dayLower] || ''
-        })).filter(act => act.activity && act.activity !== '-' && act.activity.toLowerCase() !== 'libre') || []
-
+      {DAYS_ORDER.map((day) => {
+        const activities = blocksForDay(blocks, day)
         return (
           <div key={day} className="weekly-day-card">
             <h3 className="weekly-day-title">{day}</h3>
             <div className="weekly-activities-list">
               {activities.length > 0 ? (
-                activities.map((act, idx) => {
-                  const isBreak = act.activity.toLowerCase().includes('descanso') || act.activity.toLowerCase().includes('break')
-                  return (
-                    <div key={idx} className={`weekly-activity-item ${isBreak ? 'type-break' : 'type-estudio'}`}>
-                      <span className="time">{act.time}</span>
-                      <span className="activity">{act.activity}</span>
-                    </div>
-                  )
-                })
+                activities.map((act, idx) => (
+                  <div
+                    key={idx}
+                    className={`weekly-activity-item ${act.type === 'descanso' ? 'type-break' : 'type-estudio'}`}
+                  >
+                    <span className="time">{act.startTime} - {act.endTime}</span>
+                    <span className="activity">{act.activity}</span>
+                  </div>
+                ))
               ) : (
                 <p className="no-activities">Día libre 🏖️</p>
               )}
@@ -504,7 +505,7 @@ function WeeklyView({ parsedTable }) {
 }
 
 // Vista Mensual
-function MonthlyView({ parsedTable }) {
+function MonthlyView({ blocks }) {
   const [currentDate, setCurrentDate] = useState(() => new Date(2026, 3, 13)) // Abril 2026 por defecto
   const [selectedDay, setSelectedDay] = useState(13)
 
@@ -541,10 +542,10 @@ function MonthlyView({ parsedTable }) {
   const selectedDayName = getDayOfWeekName(selectedDay)
   const selectedDayCapitalized = selectedDayName.charAt(0).toUpperCase() + selectedDayName.slice(1)
 
-  const selectedDayActivities = parsedTable?.rows.map(row => ({
-    time: row['hora'] || '',
-    activity: row[selectedDayName] || ''
-  })).filter(act => act.activity && act.activity !== '-' && act.activity.toLowerCase() !== 'libre') || []
+  const selectedDayActivities = blocksForDay(blocks, selectedDayCapitalized).map((b) => ({
+    time: `${b.startTime} - ${b.endTime}`,
+    activity: b.activity,
+  }))
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(year, monthIndex - 1, 1))
@@ -666,7 +667,8 @@ export default function CalendarPage({
         isAiGenerated: true,
         rawMarkdown: dbPlan.aiPlan,
         courses: dbPlan.courses || [],
-        schedule: []
+        schedule: [],
+        blocks: dbPlan.blocks || []
       }
     }
     const navPlan = location.state?.generatedPlan || plan
@@ -678,24 +680,22 @@ export default function CalendarPage({
     }
   }, [dbPlan, plan, location.state, user])
 
-  // Parser para la tabla de markdown
-  const parsedTable = useMemo(() => {
-    if (!safePlan.rawMarkdown) return null
-    return parseMarkdownTable(safePlan.rawMarkdown)
-  }, [safePlan.rawMarkdown])
+  // safePlan.blocks ahora viene directo de MongoDB o del estado de navegación
+  const activeBlocks = useMemo(() => {
+    if (safePlan.blocks?.length) return safePlan.blocks
 
-  // Tabla simulada hermosa si no hay una tabla cargada desde la IA
-  const mockWeeklyTable = useMemo(() => {
-    return {
-      rows: [
-        { hora: '09:00 - 10:30', lunes: 'Estadística', martes: 'Cálculo Avanzado', miércoles: 'Física II', jueves: 'Matemáticas III', viernes: 'Química Orgánica', sábado: 'Programación II', domingo: 'Descanso' },
-        { hora: '11:00 - 12:30', lunes: 'Física II', martes: 'Descanso', miércoles: 'Estadística', jueves: 'Química Orgánica', viernes: 'Programación II', sábado: 'Cálculo Avanzado', domingo: 'Descanso' },
-        { hora: '14:00 - 15:30', lunes: 'Descanso', martes: 'Estudio: Cálculo', miércoles: 'Estudio: Física', jueves: 'Descanso', viernes: 'Estudio: Química', sábado: 'Descanso', domingo: 'Descanso' }
-      ]
-    }
-  }, [])
-
-  const activeParsedTable = parsedTable || mockWeeklyTable
+    // Fallback de demostración (mismo propósito que mockWeeklyTable)
+    return [
+      { day: 'Lunes',     startTime: '09:00', endTime: '10:30', activity: 'Estadística',        type: 'clase',   course: 'Estadística' },
+      { day: 'Lunes',     startTime: '14:00', endTime: '15:30', activity: 'Estudio: Cálculo',    type: 'estudio', course: 'Cálculo Avanzado' },
+      { day: 'Martes',    startTime: '11:00', endTime: '12:30', activity: 'Descanso',            type: 'descanso' },
+      { day: 'Miércoles', startTime: '09:00', endTime: '10:30', activity: 'Física II',           type: 'clase',   course: 'Física II' },
+      { day: 'Jueves',    startTime: '09:00', endTime: '10:30', activity: 'Matemáticas III',     type: 'clase',   course: 'Matemáticas III' },
+      { day: 'Viernes',   startTime: '09:00', endTime: '10:30', activity: 'Química Orgánica',    type: 'clase',   course: 'Química Orgánica' },
+      { day: 'Sábado',    startTime: '09:00', endTime: '10:30', activity: 'Programación II',     type: 'clase',   course: 'Programación II' },
+      { day: 'Domingo',   startTime: '11:00', endTime: '12:30', activity: 'Descanso',            type: 'descanso' },
+    ]
+  }, [safePlan.blocks])
 
   // Determinar la clase de color basada en la prioridad/tipo
   const getTypeClass = (priority) => {
@@ -707,35 +707,24 @@ export default function CalendarPage({
     return 'type-clase'
   }
 
-  // Generar actividades para el día de "Hoy" dinámicamente si tenemos la tabla parseada
+  // Generar actividades para el día de "Hoy" dinámicamente
   const todayActivities = useMemo(() => {
-    if (safePlan.schedule && safePlan.schedule.length > 0) {
-      return safePlan.schedule
-    }
-    
-    // Si tenemos tabla parseada, filtramos para el día de la semana actual
-    if (activeParsedTable) {
-      const daysOfWeek = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
-      const todayIndex = new Date().getDay()
-      const todayName = daysOfWeek[todayIndex]
-      
-      const extracted = activeParsedTable.rows.map(row => ({
-        time: row['hora'] || '',
-        course: row[todayName] || '',
-        priority: (row[todayName] || '').toLowerCase().includes('descanso') || (row[todayName] || '').toLowerCase().includes('break') ? 'Descanso' : 'Estudio'
-      })).filter(act => act.course && act.course !== '-' && act.course.toLowerCase() !== 'libre')
+    const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    const todayName = daysOfWeek[new Date().getDay()]
+    const todays = blocksForDay(activeBlocks, todayName)
 
-      if (extracted.length > 0) return extracted
+    if (todays.length > 0) {
+      return todays.map((b) => ({
+        course: b.activity,
+        time: `${b.startTime} - ${b.endTime}`,
+        priority: b.type === 'clase' ? 'Clase' : b.type === 'descanso' ? 'Descanso' : 'Estudio',
+      }))
     }
 
-    // Fallback de demostración si no hay nada
     return [
-      { course: 'Estadística', time: '09:00 - 10:30', priority: 'Clase' },
-      { course: 'Cálculo Avanzado', time: '11:00 - 12:30', priority: 'Clase' },
-      { course: 'Descanso Activo', time: '12:30 - 13:00', priority: 'Descanso' },
-      { course: 'Estudio Independiente: Física II', time: '14:00 - 15:30', priority: 'Estudio' }
+      { course: 'Sin actividades hoy', time: '—', priority: 'Descanso' }
     ]
-  }, [safePlan.schedule, activeParsedTable])
+  }, [activeBlocks])
 
   const hasSchedule = todayActivities.length > 0
 
@@ -833,11 +822,11 @@ export default function CalendarPage({
                   )}
 
                   {currentMode === 'week' && (
-                    <WeeklyView parsedTable={activeParsedTable} />
+                    <WeeklyView blocks={activeBlocks} />
                   )}
 
                   {currentMode === 'month' && (
-                    <MonthlyView parsedTable={activeParsedTable} />
+                    <MonthlyView blocks={activeBlocks} />
                   )}
 
                   <div className="cal-info-green-mobile">
