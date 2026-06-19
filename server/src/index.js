@@ -17,6 +17,7 @@ import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 import { connectDB } from './config/db.js'
 import authRoutes from './routes/auth.routes.js'
+import userRoutes from './routes/user.routes.js'
 import courseRoutes from './routes/course.routes.js'
 import scheduleRoutes from './routes/schedule.routes.js'
 
@@ -45,15 +46,22 @@ app.use('/api/auth/login', rateLimit({
 
 // Rutas
 app.use('/api/auth', authRoutes)
+app.use('/api/user', userRoutes) 
 app.use('/api/courses', courseRoutes)
 app.use('/api/schedule', scheduleRoutes)
 app.get('/api/health', (_, res) => res.json({ status: 'ok' }))
 
 // Conectar DB y levantar servidor (solo en ejecución real, no en tests)
 if (process.env.NODE_ENV !== 'test') {
-  connectDB().then(() =>
-    app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`))
-  )
+  connectDB()
+    .then(() => {
+      // Es CRÍTICO especificar '0.0.0.0' en entornos Docker/Cloud Run
+      app.listen(PORT, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PORT}`))
+    })
+    .catch((err) => {
+      console.error('ERROR CRÍTICO: No se pudo conectar a MongoDB en el inicio.', err)
+      process.exit(1) // Obliga al contenedor a caer y mostrar el error en los logs
+    })
 }
 
 export default app

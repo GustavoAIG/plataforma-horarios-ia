@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function Courses({ courses, onViewCourse }) {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">

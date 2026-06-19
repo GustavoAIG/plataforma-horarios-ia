@@ -1,55 +1,195 @@
-import { createContext, useContext, useState, useEffect } from 'react'
-import { loginApi, registerApi, getMeApi } from '../api/auth.js'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState
+} from 'react'
 
-const AuthContext = createContext(null)
+import {
+  getMeApi,
+  loginApi,
+  registerApi
+} from '../api/auth'
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(localStorage.getItem('token'))
-  const [loading, setLoading] = useState(true)
+const AuthContext =
+  createContext(null)
 
-  // Al cargar la app, si hay token verifica si sigue válido
-  useEffect(() => {
-    if (token) {
-      getMeApi()
-        .then((res) => setUser(res.data))
-        .catch(() => {
-          localStorage.removeItem('token')
-          setToken(null)
-        })
-        .finally(() => setLoading(false))
-    } else {
-      setLoading(false)
-    }
-  }, [token])
+export function AuthProvider({
+  children
+}) {
+  const [user, setUser] =
+    useState(null)
 
-  const login = async (email, password) => {
-    const res = await loginApi({ email, password })
-    localStorage.setItem('token', res.data.token)
-    setToken(res.data.token)
-    setUser(res.data.user)
-    return res.data.user
-  }
+  const [isLoading, setIsLoading] =
+    useState(true)
 
-  const register = async (data) => {
-    const res = await registerApi(data)
-    localStorage.setItem('token', res.data.token)
-    setToken(res.data.token)
-    setUser(res.data.user)
-    return res.data.user
-  }
+  const [isAuthenticated,
+    setIsAuthenticated] =
+    useState(false)
 
-  const logout = () => {
+  /**
+   * LOGOUT
+   */
+  const logout = useCallback(() => {
     localStorage.removeItem('token')
-    setToken(null)
+
     setUser(null)
-  }
+
+    setIsAuthenticated(false)
+  }, [])
+
+  /**
+   * SET SESSION
+   */
+  const setSession = useCallback(
+    (token, userData) => {
+      localStorage.setItem(
+        'token',
+        token
+      )
+
+      setUser(userData)
+
+      setIsAuthenticated(true)
+    },
+    []
+  )
+
+  /**
+   * UPDATE USER
+   */
+  const updateUser = useCallback((newData) => {
+    setUser((prev) => ({ ...prev, ...newData }))
+  }, [])
+
+  /**
+   * LOGIN
+   */
+  const login = useCallback(
+    async (credentials) => {
+      // Quitamos las llaves de { data }, ahora recibimos la respuesta directa de tu API
+      const res = await loginApi(credentials)
+
+      // Dependiendo de cómo responda tu backend, cámbialo a res.token o res.data.token
+      // Si tu backend responde con { token, user }, se usa res.token:
+      setSession(
+        res?.token || res?.data?.token,
+        res?.user || res?.data?.user
+      )
+
+      return res?.user || res?.data?.user
+    },
+    [setSession]
+  )
+
+  /**
+   * REGISTER
+   */
+  const register = useCallback(
+    async (payload) => {
+      // Quitamos las llaves de { data } aquí también
+      const res = await registerApi(payload)
+
+      // Protegemos la lectura con encadenamiento opcional (?.) por si las llaves varían
+      setSession(
+        res?.token || res?.data?.token,
+        res?.user || res?.data?.user
+      )
+
+      return res?.user || res?.data?.user
+    },
+    [setSession]
+  )
+
+  /**
+   * VERIFY SESSION
+   */
+  useEffect(() => {
+    let isMounted = true
+
+    async function verifySession() {
+      const token = localStorage.getItem('token')
+
+      if (!token) {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+        return
+      }
+
+      try {
+        // CORRECCIÓN: Eliminamos { data }, ya que getMeApi() ya devuelve la data directa
+        const res = await getMeApi()
+
+        if (!isMounted) return
+
+        // Leemos el usuario de forma segura adaptándonos a cómo lo devuelva tu backend
+        const userData = res?.user || res?.data?.user || res
+        setUser(userData)
+        setIsAuthenticated(true)
+        
+      } catch (error) {
+        console.error('Session verification failed:', error)
+        
+        if (isMounted) {
+          logout()
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    verifySession()
+
+    return () => {
+      isMounted = false
+    }
+    // Usamos una función anónima para ejecutar logout de forma segura sin causar bucles en las dependencias
+  }, [])
+
+  /**
+   * CONTEXT VALUE
+   */
+  const value = useMemo(() => ({
+    user,
+    isLoading,
+    isAuthenticated,
+    login,
+    register,
+    logout,
+    updateUser
+  }), [
+    user,
+    isLoading,
+    isAuthenticated,
+    login,
+    register,
+    logout,
+    updateUser
+  ])
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={value}
+    >
       {children}
     </AuthContext.Provider>
   )
 }
 
-export const useAuth = () => useContext(AuthContext)
+export function useAuth() {
+  const context =
+    useContext(AuthContext)
+
+  if (!context) {
+    throw new Error(
+      'useAuth must be used within AuthProvider'
+    )
+  }
+
+  return context
+}

@@ -1,50 +1,338 @@
-import React from 'react'
+import {
+  NavLink,
+  useNavigate
+} from 'react-router-dom'
 
-export default function Sidebar({ current, onSelect }) {
-  const items = [
-    { id: 'home', label: 'Inicio', icon: '🏠' },
-    { id: 'onboarding', label: 'Onboarding', icon: '🧭' },
-    { id: 'courses', label: 'Cursos', icon: '📚' },
-    { id: 'dashboard', label: 'Panel', icon: '📊' },
-  ]
+import { useMemo } from 'react'
+import { useAuth } from '../context/AuthContext'
+
+const navItems = [
+  {
+    path: '/app/calendar',
+    label: 'Calendario',
+    icon: '📅'
+  }
+]
+
+export default function Sidebar({
+  sidebarOpen,
+  onToggle,
+  onLogout
+}) {
+  const { user } = useAuth()
+
+  const navigate = useNavigate()
+
+  const initials = useMemo(() => {
+    if (!user?.Name_User) return 'E'
+
+    return user.Name_User.charAt(0)
+      .toUpperCase()
+  }, [user])
+
+  const fullName = useMemo(() => {
+    if (!user) return 'Estudiante'
+
+    return [
+      user.Name_User,
+      user.Last_Name_User_1
+    ]
+      .filter(Boolean)
+      .join(' ')
+  }, [user])
 
   return (
-    <aside className="w-72 min-h-screen bg-gradient-to-b from-indigo-50 to-white dark:from-slate-900 dark:to-slate-950 p-6 border-r">
-      <div className="mb-6 flex items-center gap-3">
-        <div className="w-10 h-10 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold">PH</div>
-        <div>
-          <div className="text-sm font-semibold">Plataforma</div>
-          <div className="text-xs text-slate-500 dark:text-slate-400">Horarios IA</div>
-        </div>
+    <aside
+      className={`
+        fixed
+        left-0
+        top-0
+        z-40
+        flex
+        min-h-screen
+        w-72
+        flex-col
+        border-r
+        border-slate-200
+        bg-gradient-to-b
+        from-indigo-50
+        to-white
+        p-6
+        transition-transform
+        duration-300
+        dark:border-slate-800
+        dark:from-slate-900
+        dark:to-slate-950
+
+        ${
+          sidebarOpen
+            ? 'translate-x-0'
+            : '-translate-x-full'
+        }
+
+        lg:translate-x-0
+      `}
+    >
+
+      {/* HEADER */}
+      <div
+        className="
+          mb-8
+          flex
+          items-center
+          justify-between
+        "
+      >
+
+        <button
+          type="button"
+          onClick={() =>
+            navigate('/app/calendar')
+          }
+          className="
+            flex
+            items-center
+            gap-3
+          "
+        >
+
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              items-center
+              justify-center
+              rounded-xl
+              bg-indigo-600
+              text-sm
+              font-bold
+              text-white
+            "
+          >
+            SL
+          </div>
+
+          <div className="text-left">
+            <div
+              className="
+                text-sm
+                font-semibold
+                text-slate-800
+                dark:text-slate-100
+              "
+            >
+              Stressless
+            </div>
+
+            <div
+              className="
+                text-xs
+                text-slate-500
+                dark:text-slate-400
+              "
+            >
+              Horarios IA
+            </div>
+          </div>
+
+        </button>
+
+        <button
+          type="button"
+          onClick={onToggle}
+          aria-label="Toggle sidebar"
+          className="
+            rounded-lg
+            p-2
+            text-slate-400
+            transition-colors
+            hover:bg-slate-100
+            hover:text-slate-600
+            dark:hover:bg-slate-800
+            dark:hover:text-slate-200
+            lg:hidden
+          "
+        >
+          ⚙️
+        </button>
+
       </div>
 
-      <nav className="space-y-2">
-        {items.map((it) => (
-          <button
-            key={it.id}
-            className={`w-full text-left px-3 py-3 rounded-lg flex items-center gap-3 transition-colors ${
-              current === it.id
-                ? 'bg-indigo-100 dark:bg-indigo-900/40 font-semibold text-indigo-700 dark:text-indigo-200'
-                : 'text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-            onClick={() => onSelect(it.id)}
+      {/* NAVIGATION */}
+      <nav
+        className="
+          flex-1
+          space-y-2
+        "
+        aria-label="Sidebar navigation"
+      >
+
+        {navItems.map((item) => (
+          <NavLink
+            key={item.path}
+            to={item.path}
+            className={({ isActive }) => `
+              flex
+              w-full
+              items-center
+              gap-3
+              rounded-xl
+              px-4
+              py-3
+              text-sm
+              font-medium
+              transition-all
+
+              ${
+                isActive
+                  ? `
+                    bg-indigo-100
+                    text-indigo-700
+                    dark:bg-indigo-900/40
+                    dark:text-indigo-200
+                  `
+                  : `
+                    text-slate-700
+                    hover:bg-slate-100
+                    dark:text-slate-300
+                    dark:hover:bg-slate-800
+                  `
+              }
+            `}
           >
-            <div className="w-8 h-8 flex items-center justify-center rounded-md bg-white/60 dark:bg-slate-800">{it.icon}</div>
-            <div>{it.label}</div>
-          </button>
+
+            <div
+              className="
+                flex
+                h-9
+                w-9
+                items-center
+                justify-center
+                rounded-lg
+                bg-white/70
+                dark:bg-slate-800
+              "
+              aria-hidden="true"
+            >
+              {item.icon}
+            </div>
+
+            <span>{item.label}</span>
+
+          </NavLink>
         ))}
+
       </nav>
 
-      <div className="mt-8">
-        <div className="text-xs text-slate-500 mb-2">Cuenta</div>
-        <div className="p-3 bg-white dark:bg-slate-900 rounded-lg flex items-center justify-between">
-          <div>
-            <div className="font-medium">María Pérez</div>
-            <div className="text-xs text-slate-500">Estudiante</div>
-          </div>
-          <div className="w-8 h-8 rounded-full bg-indigo-600 text-white flex items-center justify-center">M</div>
+      {/* USER */}
+      <footer
+        className="
+          mt-8
+          border-t
+          border-slate-200
+          pt-5
+          dark:border-slate-800
+        "
+      >
+
+        <div
+          className="
+            mb-2
+            text-xs
+            font-medium
+            uppercase
+            tracking-wide
+            text-slate-500
+          "
+        >
+          Cuenta
         </div>
-      </div>
+
+        <div
+          className="
+            flex
+            items-center
+            justify-between
+            gap-3
+            rounded-xl
+            bg-white
+            p-3
+            shadow-sm
+            dark:bg-slate-900
+          "
+        >
+
+          <div className="min-w-0">
+
+            <div
+              className="
+                truncate
+                text-sm
+                font-semibold
+                text-slate-800
+                dark:text-slate-100
+              "
+            >
+              {fullName}
+            </div>
+
+            <div
+              className="
+                truncate
+                text-xs
+                text-slate-500
+              "
+            >
+              {user?.Email_User || ''}
+            </div>
+
+          </div>
+
+          <div
+            className="
+              flex
+              h-10
+              w-10
+              flex-shrink-0
+              items-center
+              justify-center
+              rounded-full
+              bg-indigo-600
+              text-sm
+              font-semibold
+              text-white
+            "
+          >
+            {initials}
+          </div>
+
+        </div>
+
+        <button
+          type="button"
+          onClick={onLogout}
+          className="
+            mt-4
+            w-full
+            rounded-lg
+            px-3
+            py-2
+            text-left
+            text-sm
+            text-slate-500
+            transition-colors
+            hover:bg-red-50
+            hover:text-red-500
+            dark:hover:bg-red-950/30
+            dark:hover:text-red-400
+          "
+        >
+          Cerrar sesión
+        </button>
+
+      </footer>
+
     </aside>
   )
 }

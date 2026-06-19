@@ -2,8 +2,11 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import dotenv from 'dotenv'
 dotenv.config()
 
+// Inicialización de la API de Google Generative AI usando la clave de entorno.
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' })
+
+// Configuración del modelo: se migró a 'gemini-2.5-flash' ya que la serie 1.5 está en proceso de retiro/deprecación para esta clave.
+const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
 
 export const generateSchedule = async ({ courses, preference, learningAnswers, userName }) => {
   // Construimos la lista con los campos reales de MongoDB
@@ -47,8 +50,8 @@ RESPONDE EN ESPAÑOL con este formato exacto:
 
 ## Horario Semanal
 
-| Hora | Lunes | Martes | Miércoles | Jueves | Viernes | Sábado |
-|------|-------|--------|-----------|--------|---------|--------|
+| Hora | Lunes | Martes | Miércoles | Jueves | Viernes | Sábado | Domingo |
+|------|-------|--------|-----------|--------|---------|--------|---------|
 [completa la tabla con actividades reales]
 
 ## Recomendaciones por Curso
@@ -62,4 +65,35 @@ RESPONDE EN ESPAÑOL con este formato exacto:
 
   const result = await model.generateContent(prompt)
   return result.response.text()
+}
+
+// Analiza y extrae cursos de un documento de malla curricular (PDF o TXT) usando Gemini.
+export const extractCoursesFromMalla = async ({ fileBase64, mimeType }) => {
+  const prompt = `Analiza el documento adjunto (malla curricular o plan de estudios).
+Extrae la lista de cursos que correspondan al ciclo actual o las asignaturas mencionadas en el documento.
+Para cada curso detectado, extrae o infiere los siguientes campos en formato JSON:
+- name: El nombre completo del curso.
+- code: El código del curso (por ejemplo, MAT101 o ALG301). Si no está disponible, créalo usando las primeras letras del nombre del curso en mayúsculas.
+- credits: La cantidad de créditos del curso (un número entero). Si no se indica, asume 3.
+
+Responde únicamente con un array en formato JSON puro, sin decoraciones de markdown (no utilices triple backticks ni \`\`\`json). Ejemplo de respuesta:
+[
+  {"name": "Diseño de Algoritmos", "code": "ALG301", "credits": 4},
+  {"name": "Ingeniería de Requisitos", "code": "REQ202", "credits": 3}
+]`;
+
+  const result = await model.generateContent([
+    {
+      inlineData: {
+        data: fileBase64,
+        mimeType: mimeType
+      }
+    },
+    { text: prompt }
+  ]);
+
+  const responseText = result.response.text().trim();
+  // Limpiar bloques de código markdown de la respuesta si la IA los incluye
+  const cleanJson = responseText.replace(/^```json\s*/i, '').replace(/```$/, '').trim();
+  return JSON.parse(cleanJson);
 }

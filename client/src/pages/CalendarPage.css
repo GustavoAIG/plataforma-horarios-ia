@@ -1,0 +1,479 @@
+/* Variables específicas del calendario */
+:root {
+  --cal-bg: #f8fafc;
+  --cal-sidebar: #2b3a4a;
+  --cal-text: #1e293b;
+  --cal-text-muted: #64748b;
+  --cal-card-bg: #ffffff;
+  --cal-border: #e2e8f0;
+  
+  --color-class: #e2e8f0; /* Azul grisáceo claro para Clase */
+  --color-study: #e0e7ff; /* Azul índigo claro para Estudio */
+  --color-break: #dcfce7; /* Verde claro para Break */
+}
+
+/* Layout Principal */
+.page--calendar {
+  display: flex;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #6272db 0%, #d46ccf 100%);
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.calendar-app-container {
+  display: flex;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  background-color: var(--cal-bg);
+  border-radius: 28px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+  overflow: hidden;
+}
+
+/* Sidebar Izquierdo */
+.cal-sidebar-left {
+  width: 260px;
+  background-color: #ffffff;
+  border-right: 1px solid var(--cal-border);
+  display: flex;
+  flex-direction: column;
+  padding: 32px 20px;
+}
+
+.cal-brand-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 40px;
+}
+
+.cal-brand-header h2 {
+  font-size: 1.4rem;
+  color: var(--cal-text);
+  margin: 0;
+  font-weight: 800;
+}
+
+.cal-menu-btn {
+  background-color: #e2e8f0;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--cal-text);
+}
+
+.cal-nav-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.cal-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  color: var(--cal-text-muted);
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  transition: all 0.2s;
+}
+
+.cal-nav-item.is-active {
+  background-color: var(--cal-sidebar);
+  color: #ffffff;
+}
+
+.cal-nav-item:hover:not(.is-active) {
+  background-color: #f1f5f9;
+}
+
+.cal-user-card {
+  background-color: #e0e7ff;
+  padding: 16px;
+  border-radius: 14px;
+  margin-top: auto;
+}
+
+.cal-user-card strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--cal-text);
+}
+
+.cal-user-card span {
+  font-size: 0.8rem;
+  color: #4f46e5;
+}
+
+/* Centro: Contenido Principal */
+.cal-main-content {
+  flex: 1;
+  padding: 40px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.cal-header-text h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: var(--cal-text);
+  margin: 0 0 4px 0;
+}
+
+.cal-header-text p {
+  font-size: 1rem;
+  color: var(--cal-text-muted);
+  margin: 0;
+}
+
+.cal-tabs {
+  display: flex;
+  background-color: #ffffff;
+  border-radius: 30px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.cal-tab-btn {
+  padding: 10px 24px;
+  border-radius: 20px;
+  border: none;
+  background: transparent;
+  font-weight: 600;
+  color: var(--cal-text-muted);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.cal-tab-btn.is-active {
+  background-color: var(--cal-sidebar);
+  color: #ffffff;
+}
+
+.cal-banner-ia {
+  background-color: #e6f9f3; /* Verde menta muy claro */
+  border-radius: 16px;
+  padding: 20px 24px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.cal-banner-ia strong {
+  color: var(--cal-text);
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-banner-features {
+  display: flex;
+  gap: 24px;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.cal-schedule-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Tarjetas de Horario */
+.schedule-card {
+  background-color: #ffffff;
+  border-radius: 16px;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Bordes izquierdos de color */
+.schedule-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+}
+
+.schedule-card.type-clase::before { background-color: var(--cal-sidebar); }
+.schedule-card.type-estudio::before { background-color: var(--cal-sidebar); }
+.schedule-card.type-break::before { background-color: #10b981; }
+
+.schedule-info h4 {
+  margin: 0 0 6px 0;
+  font-size: 1.1rem;
+  color: var(--cal-text);
+}
+
+.schedule-info p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--cal-text-muted);
+}
+
+.schedule-badge {
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.schedule-badge.type-clase { background-color: var(--color-class); color: #475569; }
+.schedule-badge.type-estudio { background-color: var(--color-study); color: #4f46e5; }
+.schedule-badge.type-break { background-color: var(--color-break); color: #059669; }
+
+
+/* Sidebar Derecho */
+.cal-sidebar-right {
+  width: 320px;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  background-color: #f1f5f9;
+}
+
+.cal-right-panel {
+  background-color: #ffffff;
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+
+.cal-right-panel h3 {
+  margin: 0 0 20px 0;
+  font-size: 1.05rem;
+  color: var(--cal-text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Cursos */
+.cal-course-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid var(--cal-border);
+  border-radius: 12px;
+  margin-bottom: 12px;
+  font-size: 0.85rem;
+  color: var(--cal-text-muted);
+  font-weight: 500;
+}
+.cal-course-item:last-child { margin-bottom: 0; }
+
+.cal-course-item .dot {
+  width: 8px;
+  height: 8px;
+  background-color: var(--cal-sidebar);
+  border-radius: 50%;
+}
+
+/* Recordatorios */
+.cal-reminder-item {
+  margin-bottom: 20px;
+}
+.cal-reminder-item:last-child { margin-bottom: 0; }
+.cal-reminder-item strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--cal-text);
+  margin-bottom: 4px;
+}
+.cal-reminder-item span {
+  font-size: 0.8rem;
+  color: var(--cal-text-muted);
+}
+
+/* Info Green */
+.cal-info-green {
+  background-color: #e6f9f3;
+  border-radius: 20px;
+  padding: 24px;
+  border: 1px solid #a7f3d0;
+}
+
+.cal-info-green strong {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.95rem;
+  color: var(--cal-text);
+  margin-bottom: 8px;
+}
+
+.cal-info-green p {
+  font-size: 0.85rem;
+  color: #334155;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.btn-ajustar {
+  background-color: var(--cal-sidebar);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 16px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  margin-top: auto;
+  box-shadow: 0 8px 16px rgba(43, 58, 74, 0.2);
+}
+
+.cal-info-green-mobile {
+  display: none;
+}
+
+/* Mobile Navbar (oculta en desktop) */
+.cal-mobile-nav {
+  display: none;
+}
+
+/* Responsive Mobile */
+@media (max-width: 1024px) {
+  .cal-sidebar-right {
+    display: none; /* Ocultar sidebar derecho en tablets pequeñas por ahora */
+  }
+}
+
+@media (max-width: 768px) {
+  .page--calendar {
+    padding: 0;
+    background: #f8fafc; /* Fondo plano para movil */
+  }
+
+  .calendar-app-container {
+    border-radius: 0;
+    box-shadow: none;
+    flex-direction: column;
+  }
+
+  .cal-sidebar-left,
+  .cal-sidebar-right {
+    display: none;
+  }
+
+  .cal-main-content {
+    padding: 24px 20px 80px 20px; /* padding inferior para navbar */
+  }
+
+  .cal-header-top {
+    flex-direction: column;
+    gap: 16px;
+  }
+
+  .cal-tabs {
+    display: none; /* Según diseño movil no hay tabs visibles arriba */
+  }
+
+  .cal-banner-features {
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Info green movil */
+  .cal-info-green-mobile {
+    display: block;
+    background-color: #ffffff;
+    border: 1px solid #a7f3d0;
+    border-radius: 20px;
+    padding: 20px;
+    margin-top: 24px;
+  }
+  
+  .cal-info-green-mobile strong {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--cal-text);
+    margin-bottom: 8px;
+  }
+  
+  .cal-info-green-mobile p {
+    font-size: 0.85rem;
+    color: var(--cal-text-muted);
+    margin: 0;
+    line-height: 1.5;
+  }
+
+  /* Mobile bottom navbar */
+  .cal-mobile-nav {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background-color: #ffffff;
+    border-top: 1px solid var(--cal-border);
+    padding: 12px 0 24px 0;
+    z-index: 100;
+    border-radius: 30px 30px 0 0;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.05);
+  }
+
+  .cal-nav-btn-mobile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: none;
+    border: none;
+    color: var(--cal-text-muted);
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .cal-nav-btn-mobile.is-active {
+    color: var(--cal-sidebar);
+  }
+  
+  .cal-nav-btn-mobile.is-active .nav-icon-wrapper {
+    background-color: #e0e7ff;
+    border-radius: 12px;
+  }
+
+  .nav-icon-wrapper {
+    padding: 8px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}

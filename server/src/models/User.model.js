@@ -15,6 +15,8 @@ const userSchema = new mongoose.Schema({
   Registration_Date:    { type: Date, default: Date.now },
   role:                 { type: String, enum: ['student', 'admin'], default: 'student' },
   learningAnswers:      { type: [String], default: [] },
+  hasCompletedOnboarding: { type: Boolean, default: false },  // ← agregar
+  onboardingCourses:    { type: [String], default: [] },      // ← agregar
 }, { timestamps: true, collection: 'users' })
 
 // ← El problema estaba aquí, async/await en vez de callback
@@ -30,6 +32,7 @@ userSchema.methods.comparePassword = async function (candidate) {
 userSchema.methods.toJSON = function () {
   const obj = this.toObject()
   delete obj.Password_user
+  delete obj.__v
   return obj
 }
 

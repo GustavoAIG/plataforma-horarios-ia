@@ -1,0 +1,149 @@
+/* Contenedor principal (Fondo de toda la pantalla) */
+.page--landing {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  /* Degradado moderno estilo glassmorphism (azul a violeta/rosa) */
+  background: linear-gradient(135deg, #6272db 0%, #d46ccf 100%);
+  margin: 0;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+/* Contenedor exterior (Tarjeta translucida o borde exterior) */
+.splash-shell--hero {
+  width: 100%;
+  max-width: 600px; /* Un poco más estrecho para parecerse a la imagen */
+  background: rgba(255, 255, 255, 0.5); /* Outer card translucida */
+  backdrop-filter: blur(12px);
+  padding: 16px; /* Espacio para que se vea el borde exterior */
+  border-radius: 36px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+}
+
+/* La tarjeta blanca central */
+.splash-panel--hero {
+  background-color: #fcfdfe; /* Blanco casi puro */
+  border-radius: 28px;
+  padding: 60px 40px;
+  text-align: center;
+  box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.8), 0 4px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* Icono/Logo */
+.logo-badge {
+  margin-bottom: 24px;
+}
+
+.logo-img {
+  width: 90px;
+  height: 90px;
+  border-radius: 20px;
+  object-fit: cover;
+  background-color: #2C3E50; /* Añadido para que se vea el icono blanco */
+  box-shadow: 0 8px 16px rgba(49, 66, 87, 0.15);
+}
+
+/* Título "Stressless" */
+.splash-title {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: #2C3E50;   /* Azul oscuro grisáceo */
+  margin: 0 0 8px 0;
+  letter-spacing: -1px;
+}
+
+/* Subtítulo */
+.splash-subtitle {
+  font-size: 1.1rem;
+  color: #6a7b8e;   /* Gris azulado sutil */
+  margin: 0 0 32px 0;
+  font-weight: 500;
+}
+
+/* El rectángulo de "Reduce tu estrés..." */
+.splash-pill {
+  background-color: #eaf0f8;
+  color: #263445;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 12px 24px;
+  border-radius: 12px;
+  border: 1px solid #dce4f0;
+  margin-bottom: 40px;
+  display: inline-block;
+}
+
+/* Fila de botones (Centrada) */
+.button-row--center {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Botón COMENZAR (Estilo exacto de la imagen) */
+.primary-button--splash {
+  padding: 14px 44px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  border-radius: 12px;
+  cursor: pointer;
+  border: none;
+  background-color: #2C3E50 !important; /* Azul oscuro con important para evitar conflictos */
+  color: #ffffff !important;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 6px 16px rgba(44, 62, 80, 0.3); 
+}
+
+.primary-button--splash:hover {
+  background-color: #1a252f !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(44, 62, 80, 0.4);
+}
+
+/* ==================================================
+   DISEÑO PARA MÓVILES (Estilo Glass Transparente)
+   ================================================== */
+@media (max-width: 768px) {
+  .splash-shell--hero {
+    background: transparent;
+    backdrop-filter: none;
+    box-shadow: none;
+    padding: 0;
+  }
+
+  .splash-panel--hero {
+    background-color: transparent;
+    box-shadow: none;
+    padding: 20px;
+  }
+
+  .logo-img {
+    background-color: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+
+  .splash-title {
+    color: #ffffff;
+  }
+
+  .splash-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .splash-pill {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
+  }
+}
