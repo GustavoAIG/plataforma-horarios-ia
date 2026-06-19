@@ -176,13 +176,28 @@ Responde únicamente con un array JSON puro, sin markdown:
   }
 
   const responseText = result.response.text().trim()
-  const jsonMatch = responseText.match(/\[\s*\{[\s\S]*\}\s*\]/)
-  const cleanJson = jsonMatch ? jsonMatch[0] : responseText.replace(/^```json\s*/i, '').replace(/```$/, '').trim()
+  
+  // Limpiar concatenaciones de JS si existen en la respuesta cruda (e.g. 'linea1' + 'linea2')
+  let sanitizedText = responseText
+    .replace(/['"]\s*\+\s*\n?\s*['"]/g, '')
+    .replace(/\\"/g, '"')
+    .replace(/\\n/g, '\n')
+
+  const jsonMatch = sanitizedText.match(/\[\s*\{[\s\S]*\}\s*\]/)
+  const cleanJson = jsonMatch ? jsonMatch[0] : sanitizedText.replace(/^```json\s*/i, '').replace(/```$/, '').trim()
 
   try {
     return JSON.parse(cleanJson)
   } catch (err) {
-    console.error('Error al parsear cursos extraídos:', responseText)
-    throw new Error('La respuesta de la IA no tiene el formato JSON esperado.')
+    // Intentar reparar comillas simples y claves sin comillas
+    try {
+      const fixedJson = cleanJson
+        .replace(/'/g, '"')
+        .replace(/([{\s,])(\w+)\s*:/g, '$1"$2":')
+      return JSON.parse(fixedJson)
+    } catch (err2) {
+      console.error('Error al parsear cursos extraídos:', responseText)
+      throw new Error('La respuesta de la IA no tiene el formato JSON esperado.')
+    }
   }
 }

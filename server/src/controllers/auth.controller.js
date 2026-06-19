@@ -213,6 +213,30 @@ export const getMe = async (req, res) => {
   res.json({ user: safeUser })
 }
 
+function tryParseCourseString(str) {
+  try {
+    const cleaned = str
+      .replace(/['"]\s*\+\s*\n?\s*['"]/g, '')
+      .replace(/\\"/g, '"')
+      .replace(/\\n/g, '\n')
+      .trim()
+    const jsonMatch = cleaned.match(/\[\s*\{[\s\S]*\}\s*\]/)
+    const target = jsonMatch ? jsonMatch[0] : cleaned
+    
+    try {
+      return JSON.parse(target)
+    } catch {
+      const fixed = target
+        .replace(/'/g, '"')
+        .replace(/([{\s,])(\w+)\s*:/g, '$1"$2":')
+      return JSON.parse(fixed)
+    }
+  } catch (e) {
+    console.error('[tryParseCourseString] Error parsing course string:', e)
+    return null
+  }
+}
+
 export const saveLearningAnswers = async (req, res) => {
   try {
     const { answers, courses } = req.body
@@ -223,13 +247,40 @@ export const saveLearningAnswers = async (req, res) => {
     }
 
     const savedCourses = []
+    let courseListToProcess = []
+
     if (courses && Array.isArray(courses)) {
+      for (const c of courses) {
+        if (typeof c === 'string' && c.trim().startsWith('[')) {
+          const parsed = tryParseCourseString(c)
+          if (parsed && Array.isArray(parsed)) {
+            courseListToProcess.push(...parsed)
+          } else {
+            courseListToProcess.push(c)
+          }
+        } else {
+          courseListToProcess.push(c)
+        }
+      }
+
+      // Sanitizar la lista resultante
+      courseListToProcess = courseListToProcess.filter(c => {
+        if (!c) return false
+        const name = typeof c === 'object' ? c.name : c
+        if (!name || typeof name !== 'string') return false
+        const trimmed = name.trim()
+        if (trimmed.startsWith('[') || trimmed.startsWith('{') || trimmed.length > 100) {
+          return false
+        }
+        return true
+      })
+
       // 1. Guardar nombres en onboardingCourses
-      const courseNames = courses.map(c => typeof c === 'object' ? c.name : c)
+      const courseNames = courseListToProcess.map(c => typeof c === 'object' ? c.name : c)
       updateData.onboardingCourses = courseNames
 
       // 2. Crear o encontrar los cursos en MongoDB
-      for (const c of courses) {
+      for (const c of courseListToProcess) {
         const name = typeof c === 'object' ? c.name : c
         const code = typeof c === 'object' ? c.code : ''
         const credits = typeof c === 'object' ? c.credits : 3

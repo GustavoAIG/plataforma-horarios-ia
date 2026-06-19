@@ -2,6 +2,7 @@ import userRepository from '../repositories/user.repository.js'
 
 function parseSemesterFields(body) {
   const data = {}
+  if (!body) return { data }
   
   if (body.semesterWeeks !== undefined && body.semesterWeeks !== null) {
     const weeks = Number(body.semesterWeeks)
