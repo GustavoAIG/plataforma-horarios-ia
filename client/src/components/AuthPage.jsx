@@ -285,7 +285,7 @@ export default function AuthPage() {
                       placeholder="Tu nombre"
                       autoComplete="given-name"
                       maxLength={50}
-                      required
+                      
                     />
                   </div>
 
