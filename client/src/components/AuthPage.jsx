@@ -88,6 +88,16 @@ export default function AuthPage() {
 
     setError('')
 
+    // Primero, permitimos que la validación nativa de HTML5 muestre mensajes
+    // (por ejemplo, `required`, `type=email`, `minLength`) antes de la validación
+    // personalizada. Si la validación nativa falla, mostramos sus mensajes y
+    // detenemos el envío.
+    const formElem = e.currentTarget
+    if (formElem && !formElem.checkValidity()) {
+      formElem.reportValidity()
+      return
+    }
+
     const validationError = validateForm()
 
     if (validationError) {
