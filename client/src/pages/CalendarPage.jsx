@@ -97,27 +97,31 @@ const SidebarLeft = memo(function SidebarLeft({ user, activeSection, onSectionCh
         <button 
           className={`cal-nav-item ${activeSection === 'calendar' ? 'is-active' : ''}`}
           onClick={() => onSectionChange('calendar')}
+          aria-label="Calendario"
         >
           <Icons.Calendar /> Calendario
         </button>
         <button 
           className={`cal-nav-item ${activeSection === 'tasks' ? 'is-active' : ''}`}
           onClick={() => onSectionChange('tasks')}
+          aria-label="Tareas"
         >
           <Icons.Check /> Tareas
         </button>
         <button 
           className={`cal-nav-item ${activeSection === 'wellness' ? 'is-active' : ''}`}
           onClick={() => onSectionChange('wellness')}
+          aria-label="Bienestar"
         >
           <Icons.Heart /> Wellness
         </button>
         {user?.role === 'admin' && (
-          <button className="cal-nav-item"><Icons.Users /> Admin Panel</button>
+          <button className="cal-nav-item" aria-label="Admin Panel"><Icons.Users /> Admin Panel</button>
         )}
         <button 
           className={`cal-nav-item ${activeSection === 'profile' ? 'is-active' : ''}`}
           onClick={() => onSectionChange('profile')}
+          aria-label="Perfil"
         >
           <Icons.User /> Perfil
         </button>
@@ -138,6 +142,7 @@ const MobileNavbar = memo(function MobileNavbar({ activeSection, onSectionChange
       <button 
         className={`cal-nav-btn-mobile ${activeSection === 'calendar' ? 'is-active' : ''}`}
         onClick={() => onSectionChange('calendar')}
+        aria-label="Calendario"
       >
         <div className="nav-icon-wrapper"><Icons.Calendar /></div>
         <span>Calendario</span>
@@ -145,6 +150,7 @@ const MobileNavbar = memo(function MobileNavbar({ activeSection, onSectionChange
       <button 
         className={`cal-nav-btn-mobile ${activeSection === 'tasks' ? 'is-active' : ''}`}
         onClick={() => onSectionChange('tasks')}
+        aria-label="Tareas"
       >
         <div className="nav-icon-wrapper"><Icons.Check /></div>
         <span>Tareas</span>
@@ -152,6 +158,7 @@ const MobileNavbar = memo(function MobileNavbar({ activeSection, onSectionChange
       <button 
         className={`cal-nav-btn-mobile ${activeSection === 'wellness' ? 'is-active' : ''}`}
         onClick={() => onSectionChange('wellness')}
+        aria-label="Bienestar"
       >
         <div className="nav-icon-wrapper"><Icons.Heart /></div>
         <span>Bienestar</span>
@@ -159,6 +166,7 @@ const MobileNavbar = memo(function MobileNavbar({ activeSection, onSectionChange
       <button 
         className={`cal-nav-btn-mobile ${activeSection === 'profile' ? 'is-active' : ''}`}
         onClick={() => onSectionChange('profile')}
+        aria-label="Perfil"
       >
         <div className="nav-icon-wrapper"><Icons.User /></div>
         <span>Perfil</span>
@@ -262,7 +270,7 @@ function TasksSection({ rawMarkdown }) {
                 <option value="Baja">Baja 🟢</option>
               </select>
             </div>
-            <button type="submit" className="primary-button primary-button--wide">
+            <button type="submit" className="primary-button primary-button--wide" aria-label="Añadir tarea">
               Añadir Tarea
             </button>
           </form>
@@ -287,7 +295,12 @@ function TasksSection({ rawMarkdown }) {
                     <span className={`task-priority-badge priority-${t.priority.toLowerCase()}`}>
                       {t.priority}
                     </span>
-                    <button type="button" className="task-delete-btn" onClick={() => handleDeleteTask(t.id)}>
+                    <button
+                      type="button"
+                      className="task-delete-btn"
+                      onClick={() => handleDeleteTask(t.id)}
+                      aria-label={`Eliminar tarea: ${t.text}`}
+                    >
                       🗑️
                     </button>
                   </div>
@@ -403,10 +416,10 @@ function WellnessSection({ rawMarkdown }) {
             </div>
           </div>
           <div className="stress-actions-row">
-            <button className="btn-wellness-action" onClick={() => setStressLevel(Math.max(10, stressLevel - 15))}>
+            <button className="btn-wellness-action" onClick={() => setStressLevel(Math.max(10, stressLevel - 15))} aria-label="Realicé un descanso">
               🧘 Realicé un descanso (-15%)
             </button>
-            <button className="btn-wellness-action" onClick={() => setStressLevel(Math.min(100, stressLevel + 10))}>
+            <button className="btn-wellness-action" onClick={() => setStressLevel(Math.min(100, stressLevel + 10))} aria-label="Agregué más horas">
               📚 Agregué más horas (+10%)
             </button>
           </div>
@@ -767,9 +780,9 @@ function MonthlyView({ blocks, semesterStartDate, semesterWeeks }) {
       <div className="monthly-header-row">
         <h3 style={{ margin: 0, fontSize: '1.1rem', color: 'var(--cal-text)' }}>Calendario de Actividades del Ciclo</h3>
         <div className="month-navigation-controls">
-          <button onClick={handlePrevMonth} className="btn-month-nav">◀ Anterior</button>
+          <button onClick={handlePrevMonth} className="btn-month-nav" aria-label="Mes anterior">◀ Anterior</button>
           <span className="current-month-display">{currentMonthName} {year}</span>
-          <button onClick={handleNextMonth} className="btn-month-nav">Siguiente ▶</button>
+          <button onClick={handleNextMonth} className="btn-month-nav" aria-label="Mes siguiente">Siguiente ▶</button>
         </div>
       </div>
 
@@ -1019,6 +1032,7 @@ export default function CalendarPage({
                           key={tab.id}
                           className={`cal-tab-btn ${currentMode === tab.id ? 'is-active' : ''}`}
                           onClick={() => handleChangeMode(tab.id)}
+                          aria-label={tab.label}
                         >
                           {tab.label}
                         </button>
