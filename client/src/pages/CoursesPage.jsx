@@ -110,6 +110,8 @@ export default function CoursesPage() {
         const response = await api.post('/courses/analyze-malla', {
           fileBase64: base64Data,
           mimeType: mimeType
+        }, {
+          timeout: 60000
         })
         
         if (response.data && response.data.courses) {
@@ -199,6 +201,8 @@ export default function CoursesPage() {
             courseIds,
             preference: 'balanced',
             learningAnswers: state?.answers || []
+          }, {
+            timeout: 60000
           })
           generatedScheduleData = scheduleResponse.data
         } catch (scheduleErr) {

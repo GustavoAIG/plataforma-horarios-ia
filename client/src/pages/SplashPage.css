@@ -112,7 +112,7 @@
 .feature-icon--violet { background-color: var(--bg-violet); color: var(--text-violet); }
 
 /* Botón de acción principal */
-.primary-button {
+.page--splash .primary-button {
   background-color: #2C3E50;
   color: #ffffff;
   border: none;
@@ -127,8 +127,9 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
-.primary-button:hover {
+.page--splash .primary-button:hover {
   background-color: #f8fafc;
+  color: #2C3E50;
   transform: translateY(-1px);
 }
 
