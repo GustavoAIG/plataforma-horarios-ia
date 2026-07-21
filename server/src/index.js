@@ -64,15 +64,12 @@ app.get('/api/health', (_, res) => {
 
 // Conectar DB y levantar servidor (solo en ejecución real, no en tests)
 if (process.env.NODE_ENV !== 'test') {
-  connectDB()
-    .then(() => {
-      // Es CRÍTICO especificar '0.0.0.0' en entornos Docker/Cloud Run
-      app.listen(PORT, '0.0.0.0', () => console.log(`Servidor corriendo en puerto ${PORT}`))
-    })
-    .catch((err) => {
-      console.error('ERROR CRÍTICO: No se pudo conectar a MongoDB en el inicio.', err)
-      process.exit(1) // Obliga al contenedor a caer y mostrar el error en los logs
-    })
+  app.listen(PORT, '0.0.0.0', () => {
+    console.log(`Servidor corriendo en puerto ${PORT}`)
+  })
+  connectDB().catch((err) => {
+    console.error('ERROR EN CONEXIÓN MONGODB AL INICIO:', err)
+  })
 }
 
 export default app
