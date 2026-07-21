@@ -4,6 +4,7 @@ import './CalendarPage.css'
 import { useAuth } from '../context/AuthContext'
 import { getLatestScheduleApi } from '../api/schedule'
 import api from '../api/axios'
+import AdminPanel from '../components/AdminPanel'
 
 const calendarTabs = [
   { id: 'today', label: 'Hoy' },
@@ -116,7 +117,13 @@ const SidebarLeft = memo(function SidebarLeft({ user, activeSection, onSectionCh
           <Icons.Heart /> Wellness
         </button>
         {user?.role === 'admin' && (
-          <button className="cal-nav-item" aria-label="Admin Panel"><Icons.Users /> Admin Panel</button>
+          <button
+            className={`cal-nav-item ${activeSection === 'admin' ? 'is-active' : ''}`}
+            onClick={() => onSectionChange('admin')}
+            aria-label="Admin Panel"
+          >
+            <Icons.Users /> Admin Panel
+          </button>
         )}
         <button 
           className={`cal-nav-item ${activeSection === 'profile' ? 'is-active' : ''}`}
@@ -1002,6 +1009,12 @@ export default function CalendarPage({
         {activeSection === 'profile' && (
           <main className="cal-main-content">
             <ProfileSection user={user} />
+          </main>
+        )}
+
+        {activeSection === 'admin' && user?.role === 'admin' && (
+          <main className="cal-main-content">
+            <AdminPanel currentUser={user} />
           </main>
         )}
 
