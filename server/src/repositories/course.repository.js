@@ -24,6 +24,10 @@ export class CourseRepository {
   async deleteByIdAndUser(id, userId) {
     return Course.findOneAndDelete({ _id: id, user: userId })
   }
+
+  async countAll() {
+    return Course.countDocuments()
+  }
 }
 
 export default new CourseRepository()

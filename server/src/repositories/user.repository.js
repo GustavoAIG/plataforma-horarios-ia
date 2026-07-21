@@ -21,6 +21,18 @@ export class UserRepository {
   async findAll() {
     return User.find().select('-Password_user')
   }
+
+  async deleteById(id) {
+    return User.findByIdAndDelete(id)
+  }
+
+  async countAll() {
+    return User.countDocuments()
+  }
+
+  async countByRole(role) {
+    return User.countDocuments({ role })
+  }
 }
 
 export default new UserRepository()

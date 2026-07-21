@@ -16,6 +16,10 @@ export class ScheduleRepository {
       .sort({ createdAt: -1 })
       .populate('courses')
   }
+
+  async countAll() {
+    return StudySchedule.countDocuments()
+  }
 }
 
 export default new ScheduleRepository()
