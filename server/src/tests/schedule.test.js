@@ -58,7 +58,12 @@ describe('Schedule Endpoints (Pruebas Funcionales)', () => {
         { _id: 'course_1', Name_Course: 'Matemáticas', Hours_Course: 4, Priority_Level_Course: 3 }
       ]
       courseRepository.findManyByUser.mockResolvedValue(mockCourses)
-      generateSchedule.mockResolvedValue('## Horario Semanal\n| Hora | Lunes |\n|---|---|')
+      generateSchedule.mockResolvedValue({
+        blocks: [
+          { course: 'Matemáticas', day: 'Lunes', startTime: '08:00', endTime: '10:00' }
+        ],
+        summaryText: '## Horario Semanal\n| Hora | Lunes |\n|---|---|'
+      })
       
       scheduleRepository.create.mockResolvedValue({
         _id: 'schedule_1',
@@ -78,7 +83,8 @@ describe('Schedule Endpoints (Pruebas Funcionales)', () => {
 
       expect(res.status).toBe(201)
       expect(res.body).toHaveProperty('schedule')
-      expect(res.body).toHaveProperty('aiPlan')
+      expect(res.body.schedule).toHaveProperty('aiPlan')
+      expect(res.body).toHaveProperty('blocks')
       expect(generateSchedule).toHaveBeenCalled()
       expect(scheduleRepository.create).toHaveBeenCalled()
     })

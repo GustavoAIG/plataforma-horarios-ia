@@ -21,7 +21,8 @@ vi.mock('../models/User.model.js', () => ({
         Name_User: 'Test User',
         Email_User: 'test@example.com',
         learningAnswers: ['visual'],
-        toJSON: function() { return this }
+        toJSON: function() { return this },
+        toObject: function() { return this }
       })
     }))
   }
@@ -50,7 +51,8 @@ describe('Auth Endpoints (Pruebas Funcionales)', () => {
         _id: 'mocked_user_id',
         Name_User: 'Juan',
         Email_User: 'juan@example.com',
-        toJSON: function() { return this }
+        toJSON: function() { return this },
+        toObject: function() { return this }
       })
 
       const res = await request(app)
@@ -71,7 +73,8 @@ describe('Auth Endpoints (Pruebas Funcionales)', () => {
       const res = await request(app)
         .post('/api/auth/register')
         .send({
-          email: 'juan@example.com'
+          email: 'juan@example.com',
+          password: ''
         })
 
       expect(res.status).toBe(400)
@@ -90,7 +93,7 @@ describe('Auth Endpoints (Pruebas Funcionales)', () => {
           password: 'password123'
         })
 
-      expect(res.status).toBe(400)
+      expect(res.status).toBe(409)
       expect(res.body.message).toContain('ya está registrado')
     })
   })
@@ -101,7 +104,8 @@ describe('Auth Endpoints (Pruebas Funcionales)', () => {
         _id: 'mocked_user_id',
         Email_User: 'juan@example.com',
         comparePassword: vi.fn().mockResolvedValue(true),
-        toJSON: function() { return this }
+        toJSON: function() { return this },
+        toObject: function() { return this }
       })
 
       const res = await request(app)
@@ -141,7 +145,7 @@ describe('Auth Endpoints (Pruebas Funcionales)', () => {
         .set('Authorization', 'Bearer mocked_jwt_token')
 
       expect(res.status).toBe(200)
-      expect(res.body.Name_User).toBe('Test User')
+      expect(res.body.user.Name_User).toBe('Test User')
     })
 
     it('Debería denegar acceso si no se provee token', async () => {
@@ -169,7 +173,7 @@ describe('Auth Endpoints (Pruebas Funcionales)', () => {
         })
 
       expect(res.status).toBe(200)
-      expect(res.body.learningAnswers).toContain('visual')
+      expect(res.body.user.learningAnswers).toContain('visual')
     })
   })
 })
